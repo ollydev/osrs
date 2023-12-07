@@ -1,0 +1,183 @@
+{$DEFINE INCLUDED_INVENTORY}
+{$include_once osrs.simba}
+
+type
+  TRSInventoryInterface = record end;
+
+function TRSInventoryInterface.Bounds: TBox;
+begin
+  Result := GameTabs.GetTabBox();
+end;
+
+function TRSInventoryInterface.IsOpen: Boolean;
+begin
+  Result := GameTabs.IsCurrentTab(ERSGameTab.INVENTORY);
+end;
+
+function TRSInventoryInterface.Open: Boolean;
+begin
+  Result := Self.IsOpen() or GameTabs.Open(ERSGameTab.INVENTORY);
+end;
+
+function TRSInventoryInterface.GetSlotBoxes: TBoxArray;
+begin
+  with Self.Bounds() do
+    Result := TBoxArray.Create([X1 + 16, Y1 + 9], 4, 7, 35, 31, [7, 5]);
+end;
+
+function TRSInventoryInterface.GetSlotBox(Index: Integer): TBox;
+begin
+  Result := Self.GetSlotBoxes()[Index];
+end;
+
+function TRSInventoryInterface.MouseSlot(Index: Integer): Boolean;
+begin
+  Target.MouseMove(Self.GetSlotBoxes[Index]);
+end;
+
+function TRSInventoryInterface.IsSlotSelected(Index: Integer): Boolean;
+var
+  B: TBox;
+begin
+  B := Self.GetSlotBox(Index);
+  B.Y1 += 8; // Skip (possible) item text
+
+  Result := IsItemSelected(B);
+end;
+
+function TRSInventoryInterface.GetSelectedSlot: Integer;
+begin
+  for Result := 0 to 27 do
+    if Self.IsSlotSelected(Result) then
+      Exit;
+
+  Result := -1;
+end;
+
+function TRSInventoryInterface.IsEmpty: Boolean;
+begin
+  Result := not IsItemIn(Self.Bounds());
+end;
+
+function TRSInventoryInterface.IsFull: Boolean;
+begin
+  Result := Length(Self.GetUsedSlots()) = 28;
+end;
+
+function TRSInventoryInterface.GetUsedSlots: TIntegerArray;
+var
+  TPA: TPointArray;
+  ATPA: T2DPointArray;
+  I, Count: Integer;
+  SlotBoxes: TBoxArray;
+begin
+  SlotBoxes := Self.GetSlotBoxes();
+  TPA := FindItemBorder(SlotBoxes.Merge()) + SlotBoxes.Centers();
+  if (Length(TPA) <= Length(SlotBoxes)) then
+    Exit;
+  ATPA := TPA.PartitionEx([SlotBoxes[0].X1, SlotBoxes[0].Y1], 40, 36);
+
+  SetLength(Result, Length(SlotBoxes));
+  for I := 0 to High(ATPA) do
+    if (Length(ATPA[I]) > 1) then
+    begin
+      Result[Count] := I;
+      Inc(Count);
+    end;
+  SetLength(Result, Count);
+end;
+
+function TRSInventoryInterface.CountUsedSlots: Integer;
+begin
+  Result := Length(Self.GetUsedSlots());
+end;
+
+function TRSInventoryInterface.FindItems(ItemName: String): TIntegerArray;
+begin
+  if not Self.Open() then
+    Exit;
+
+  Result := InterfaceUtils.ItemFind(ItemName, Self.GetSlotBoxes());
+end;
+
+function TRSInventoryInterface.FindAllItems(ItemNames: TStringArray): TIntegerArray;
+begin
+  if not Self.Open() then
+    Exit;
+
+  Result := InterfaceUtils.ItemFind(ItemNames, Self.GetSlotBoxes());
+end;
+
+function TRSInventoryInterface.FindItem(ItemName: String): Integer;
+var
+  Arr: TIntegerArray;
+begin
+  Arr := InterfaceUtils.ItemFind(ItemName, Self.GetSlotBoxes(), 1);
+  if Length(Arr) then
+    Result := Arr[0]
+  else
+    Result := -1;
+end;
+
+function TRSInventoryInterface.MouseItem(ItemName: String): Boolean;
+var
+  Index: Integer;
+begin
+  Index := Self.FindItem(ItemName);
+
+  Result := Index > -1;
+  if Result then
+    Self.MouseSlot(Index);
+end;
+
+function TRSInventoryInterface.ClickItem(ItemName: String; Button: EMouseButton): Boolean;
+begin
+  if not Self.Open() then
+    Exit;
+
+  Result := InterfaceUtils.ItemClick(ItemName, Self.GetSlotBoxes(), Button);
+end;
+
+function TRSInventoryInterface.ClickAnyItem(ItemNames: TStringArray; Button: EMouseButton): Boolean;
+begin
+  if not Self.Open() then
+    Exit;
+
+  Result := InterfaceUtils.ItemClickAny(ItemNames, Self.GetSlotBoxes(), Button);
+end;
+
+function TRSInventoryInterface.CountItem(ItemName: String): Integer;
+begin
+  Result := Length(Self.FindItems(ItemName));
+end;
+
+function TRSInventoryInterface.CountAllItems(ItemNames: TStringArray): Integer;
+begin
+  Result := Length(Self.FindAllItems(ItemNames));
+end;
+
+function TRSInventoryInterface.CountItemStack(ItemName: String): Integer;
+var
+  Index: Integer;
+begin
+  Index := Self.FindItem(ItemName);
+  if (Index > -1) then
+    Result := CountItemStack(Self.GetSlotBox(Index));
+end;
+
+function TRSInventoryInterface.HasItem(ItemName: String): Boolean;
+begin
+  Result := Self.FindItem(ItemName) > -1;
+end;
+
+function TRSInventoryInterface.HasAnyItems(ItemNames: TStringArray): Boolean;
+var
+  ItemName: String;
+begin
+  for ItemName in ItemNames do
+    if Self.FindItem(ItemName) > -1 then
+      Exit(True);
+end;
+
+var
+  Inventory: TRSInventoryInterface;

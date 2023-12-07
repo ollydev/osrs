@@ -1,0 +1,72 @@
+{$DEFINE INCLUDED_LOGOUT}
+{$include_once osrs.simba}
+
+type
+  TRSLogoutInterface = record
+    const ELEMENT_WS_WORLD:             TRSInterfaceElement = [20, 1, 145, 20, False];
+    const ELEMENT_WS_LOGOUT:            TRSInterfaceElement = [168, 236, 18, 22, False];
+    const ELEMENT_WS_CLOSE:             TRSInterfaceElement = [170, 3, 18, 18, False];
+    const ELEMENT_WORLDSWITCHER_BUTTON: TRSInterfaceElement = [28, 167, 133, 25, False];
+    const ELEMENT_LOGOUT_BUTTON:        TRSInterfaceElement = [28, 215, 133, 25, False];
+  end;
+
+function TRSLogoutInterface.Bounds: TBox;
+begin
+  Result := Gametabs.GetTabBox();
+end;
+
+function TRSLogoutInterface.IsOpen: Boolean;
+begin
+  Result := GameTabs.IsCurrentTab(ERSGameTab.LOGOUT);
+end;
+
+function TRSLogoutInterface.Open: Boolean;
+begin
+  Result := GameTabs.Open(ERSGameTab.LOGOUT);
+end;
+
+function TRSLogoutInterface.GetCurrentWorld: Integer;
+begin
+  if Self.IsOpen() then
+  begin
+    while InterfaceUtils.ElementHasText(Self.ELEMENT_WS_WORLD, Self.Bounds(), 'Loading', RSColors.TEXT_GREY, FONT_BOLD_12) do
+      Sleep(50);
+
+    Result := InterfaceUtils.ElementReadNumber(Self.ELEMENT_WS_WORLD, Self.Bounds(), RSColors.TEXT_ORANGE, FONT_BOLD_12);
+  end;
+end;
+
+function TRSLogoutInterface.IsWorldSwitcherOpen: Boolean;
+begin
+  Result := Self.GetCurrentWorld() <> 0;
+end;
+
+function TRSLogoutInterface.CloseWorldSwitcher: Boolean;
+begin
+  if not Self.IsWorldSwitcherOpen() then
+    Exit(True);
+
+  InterfaceUtils.ElementClick(Self.ELEMENT_WS_CLOSE, Self.Bounds());
+
+  Result := SleepUntil(not Self.IsWorldSwitcherOpen(), RandomLeft(100, 1000), 3000);
+end;
+
+function TRSLogoutInterface.ClickLogout(Attempts: Int32 = 5; TryTime: Int32 = 20000): Boolean;
+var
+  Interval: Integer;
+begin
+  if not Self.Open() or (not Self.CloseWorldSwitcher()) then
+    Exit(False);
+
+  Interval := TryTime div Attempts;
+
+  for 1 to Attempts do
+  begin
+    InterfaceUtils.ElementClick(Self.ELEMENT_LOGOUT_BUTTON, Self.Bounds());
+    if RSClient.IsLoggedOut(Interval + Random(-1000, 1000)) then
+      Exit(True);
+  end;
+end;
+
+var
+  Logout: TRSLogoutInterface;

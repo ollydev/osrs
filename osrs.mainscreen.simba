@@ -1,0 +1,49 @@
+{$DEFINE INCLUDED_MAINSCREEN}
+{$include_once osrs.simba}
+
+type
+  TRSMainScreen = record
+    UptextFilter: TOCRFilter;
+  end;
+
+procedure TRSMainScreen.Setup;
+begin
+  Self.UptextFilter := TOCRAnyColorFilter.Create(85, 60);
+  Self.UptextFilter.Blacklist := ',.'+#39+#34;
+end;
+
+function TRSMainScreen.GetUpText: String;
+begin
+  if (RSClient.ClientMode = ERSClientMode.FIXED) then
+    Result := OCR.RecognizeStatic([7, 7, 500, 25], Self.UptextFilter, FONT_BOLD_12_SHADOW)
+  else
+    Result := OCR.RecognizeStatic([3, 3, 500, 21], Self.UptextFilter, FONT_BOLD_12_SHADOW);
+end;
+
+function TRSMainScreen.GetUpTextSimilarity(Target: String): Double;
+var
+  Text: String;
+begin
+  Text := Self.GetUpText();
+  if ('/' in Text) then
+    Text := Text.Before('/');
+
+  Result := Text.Similarity(Target);
+end;
+
+function TRSMainScreen.IsUpText(Target: String; Similarity: Double): Boolean; overload;
+begin
+  Result := Self.GetUpTextSimilarity(Target) >= Similarity;
+end;
+
+function TRSMainScreen.IsUpText(SubStrings: TStringArray): Boolean; overload;
+begin
+  Result := Self.GetUpText().ContainsAny(SubStrings, True);
+end;
+
+var
+  MainScreen: TRSMainScreen;
+
+begin
+  MainScreen.Setup();
+end;

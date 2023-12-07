@@ -1,0 +1,44 @@
+{$DEFINE INCLUDED_OCR}
+{$include_once osrs.simba}
+
+{$loadlib plugins/libsimpleocr}
+
+const
+  OCR_FONTS_PATH = {$macro DIR} + 'fonts/';
+
+var
+  OCR: TSimpleOCR;
+
+  FONT_PLAIN_11:       TFontSet := TFontSet.Create(OCR_FONTS_PATH + 'Plain 11');
+  FONT_PLAIN_12:       TFontSet := TFontSet.Create(OCR_FONTS_PATH + 'Plain 12');
+  FONT_BOLD_12:        TFontSet := TFontSet.Create(OCR_FONTS_PATH + 'Bold 12');
+  FONT_BOLD_12_SHADOW: TFontSet := TFontSet.Create(OCR_FONTS_PATH + 'Bold 12 Shadow');
+  FONT_QUILL_8:        TFontSet := TFontSet.Create(OCR_FONTS_PATH + 'Quill 8');
+  FONT_QUILL:          TFontSet := TFontSet.Create(OCR_FONTS_PATH + 'Quill');
+
+function CountItemStack(Area: TBox): Int64;
+const
+  Colors = [RSColors.ITEM_TEXT_YELLOW, RSColors.ITEM_TEXT_WHITE, RSColors.ITEM_TEXT_GREEN];
+  Multipliers = [1, 1000, 1000000];
+var
+  I: Integer;
+begin
+  for I := 0 to High(Colors) do
+  begin
+    Result := OCR.RecognizeNumber(Area, TOCRColorFilter.Create([Colors[I]]), FONT_PLAIN_11) * Multipliers[I];
+    if (Result > 0) then
+      Exit;
+  end;
+end;
+
+function ClickText(Text: String; Color: TColor; Font: TFontSet; Area: TBox = [-1,-1,-1,-1]): Boolean;
+begin
+  Result := OCR.Locate(Area, Text, Font, TOCRColorFilter.Create([Color])) = 1;
+  if Result then
+  begin
+    Target.MouseMove(OCR.Matches[0].Bounds);
+    Target.MouseClick(EMouseButton.LEFT);
+  end;
+end;
+
+

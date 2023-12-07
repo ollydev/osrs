@@ -1,0 +1,245 @@
+{$DEFINE INCLUDED_INTERFACE}
+{$include_once osrs.simba}
+
+type
+  TRSInterfaceUtils = record
+    const ImgScrollUp   = ImageFromString('IMG:AQAAABAAAAAQAAAAAAAAAI22aQABAAAAsKprAAEAAAC45D8BAAAAAP0CAQABAAAA0JjdCAAAAAAwlb0GAAAAAEAAAABAAAAA0JjdCAAAAAABAAAAEAAAABAAAAAgAAAAAAAAAAAAAAAAAAAAAwAAACAIEAgICAAIGAEAAAIAAAAAAAAAAAAAAAAAAAAAiVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAABH0lEQVR4nJWRQUsCURRGx02IZWAgLUQISRAxVFokIQ6KSAO6yAQRZiFJtIgKFKIWgotaBK2EVv6G/qMHvsfjaeNC+Dbz3jn33XvH87zYnvFif7/Pq6/75Tz8+Rgp329D5XM6UBYv/dkkMAI03++PXY628jruPIVtZdS7NgK1RXOtcJiIH1j0Ydgc3zW6raoR6OE/nTyMp44ToqMFwjWopdMnR5nTlITwth7xgouKJrlsmvIRgmg43hFKYejieYYwceBXjMD6EFRYU6qwWocuF7IIN355Q3B3osLQaoYgtOsXRuC/2H1rRLXh0oPgakNwaUIPl6Uz0TsFS1MYulbNC1UQ/FrRCPxmcW4PllPYKSWMAKGjrbBH2lCgmcoIe2UN2zilijIh/SMAAAAASUVORK5CYII=');
+    const ImgScrollDown = ImageFromString('IMG:AQAAABAAAAAQAAAAAAAAAI22aQABAAAAsKprAAEAAAC45D8BAAAAAP0CAQABAAAAUOndCAAAAABw7d0IAAAAAEAAAABAAAAAUOndCAAAAAABAAAAEAAAABAAAAAgAAAAAAAAAAAAAAAAAAAAAwAAACAIEAgICAAIGAEAAAIAAAAAAAAAAAAAAAAAAAAAiVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAABF0lEQVR4nJWRQUsCURRGx02IZaAgLUQQMQgxTFokIQ6FhAO2yAQRZiFFtIgKCiIXQotaCK4CV/0G/2MHvsdlHMaF8G3mzTl3vnfH87zUlvFSq+Xz38/d7yxcTMfK/GOkfL8Nla+Xwft94ARonj8f+xzF8jq5egq7yvj63AnMFs1rhcNMesfQh9HF5LbTv2w6gQ5RGgI6u5uGE50sEBuJkNvPCFXCm3bCF0yALuT3jGZ8ghDtDV08yImuVYuNoxI3DvwTJ7A+BPVmNgJ0pVQw+rReRuj5jTXBmogmRtMHods+dgL/xS6wiR4GZ2uC7ZvE6I1CdCfR2QqC36o5gd8sTuuLcQo7bTUPnQCho1jYIzUUaHo6Yav8Axvrp+gPZm9DAAAAAElFTkSuQmCC');
+  end;
+
+function TRSInterfaceUtils.IsTitle(Bounds: TBox; Text: String; MinMatch: Single = 0.80): Boolean;
+var
+  B: TBox;
+begin
+  B := Bounds;
+  B.X1 += 70;
+  B.Y1 += 10;
+  B.X2 -= 70;
+  B.Y2 := B.Y1 + 18;
+  B.Clip(Bounds);
+
+  Result := OCR.Locate(B, Text, FONT_BOLD_12, TOCRInvertColorFilter.Create([3358536, 0], [5, 0])) >= MinMatch;
+end;
+
+function TRSInterfaceUtils.BoundsFromTopLeft(Offset: TPoint; Width, Height: Integer): TBox;
+begin
+  Result.X1 := Offset.X;
+  Result.Y1 := Offset.Y;
+  Result.X2 := Result.X1 + Width;
+  Result.Y2 := Result.Y1 + Height;
+end;
+
+function TRSInterfaceUtils.BoundsFromTopRight(Offset: TPoint; Width, Height: Integer): TBox;
+begin
+  Result.X1 := Target.Width + Offset.X;
+  Result.Y1 := Offset.Y;
+  Result.X2 := Result.X1 + Width;
+  Result.Y2 := Result.Y1 + Height;
+end;
+
+function TRSInterfaceUtils.BoundsFromBottomLeft(Offset: TPoint; Width, Height: Integer): TBox;
+begin
+  Result.X1 := Offset.X;
+  Result.Y1 := Target.Height + Offset.Y;
+  Result.X2 := Result.X1 + Width;
+  Result.Y2 := Result.Y1 + Height;
+end;
+
+function TRSInterfaceUtils.BoundsFromBottomRight(Offset: TPoint; Width, Height: Integer): TBox;
+begin
+  Result.X1 := Target.Width + Offset.X;
+  Result.Y1 := Target.Height + Offset.Y;
+  Result.X2 := Result.X1 + Width;
+  Result.Y2 := Result.Y1 + Height;
+end;
+
+function TRSInterfaceUtils.BoundsFromCenter(MaxWidth, MaxHeight: Integer): TBox;
+
+  function GetArea: TBox;
+  begin
+    case RSClient.ClientMode() of
+      ERSClientMode.FIXED:
+        Result := [4, 6, 515, 336];
+
+      ERSClientMode.RESIZABLE_CLASSIC:
+        Result := [15, 2, Target.Width - 266, Target.Height - 167];
+
+      ERSClientMode.RESIZABLE_MODERN:
+        Result := [33, 2, Target.Width - 249, Target.Height - 167];
+    end;
+  end;
+
+var
+  B: TBox;
+  Width, Height, CenterX, CenterY: Single;
+  MaxWidthDiv2, MaxHeightDiv2: Single;
+begin
+  B := GetArea();
+
+  Width  := (B.X2 - B.X1) / 2;
+  Height := (B.Y2 - B.Y1) / 2;
+
+  CenterX := (B.X1 + Width);
+  CenterY := (B.Y1 + Height);
+
+  MaxWidthDiv2  := (MaxWidth - 1) / 2;
+  MaxHeightDiv2 := (MaxHeight - 1) / 2;
+
+  Result.X1 := Max(Floor(CenterX - Width),  Floor(CenterX - MaxWidthDiv2));
+  Result.X2 := Min(Floor(CenterX + Width),  Floor(CenterX + MaxWidthDiv2));
+  Result.Y1 := Max(Floor(CenterY - Height), Floor(CenterY - MaxHeightDiv2));
+  Result.Y2 := Min(Floor(CenterY + Height), Floor(CenterY + MaxHeightDiv2));
+end;
+
+type
+  TRSScrollBar = record
+    Bounds: TBox;
+    ThumbBounds: TBox;
+    Position: Integer;
+  end;
+
+function TRSInterfaceUtils.ScrollbarFind(Bounds: TBox): TRSScrollbar;
+var
+  Up, Down: TPoint;
+  TPA: TPointArray;
+begin
+  Up := Target.FindImage(Self.ImgScrollUp, 0, Bounds);
+  if (Up <> [-1,-1]) then
+  begin
+    Down := Target.FindImage(Self.ImgScrollUp, 0, [Up.x, Up.y + Self.ImgScrollUp.Height, Up.x + Self.ImgScrollDown.Width, Target.Height - 1]);
+    if (Down <> [-1,-1]) then
+    begin
+      Result.Bounds.X1 := Up.X + 1;
+      Result.Bounds.Y1 := Up.Y + Self.ImgScrollUp.Height;
+      Result.Bounds.X2 := Up.X + Self.ImgScrollDown.Width - 2;
+      Result.Bounds.Y2 := Down.Y - 1;
+
+      TPA := Target.FindColor($010000, 0, Result.Bounds);
+
+      Result.ThumbBounds := TPA.Bounds;
+      Result.Position := Round((Result.ThumbBounds.Y1 - Result.Bounds.Y1) * 100 / (Result.Bounds.Height - Result.ThumbBounds.Height));
+    end;
+  end;
+end;
+
+type
+  PRSInterfaceElement = ^TRSInterfaceElement;
+  TRSInterfaceElement = record
+    X, Y: Integer;
+    Width, Height: Integer;
+    FromBottom: Boolean;
+  end;
+
+function TRSInterfaceUtils.ElementBounds(Element: TRSInterfaceElement; InterfaceBounds: TBox): TBox;
+begin
+  if Element.FromBottom then
+  begin
+    Result.X1 := InterfaceBounds.X1 + Element.X;
+    Result.Y2 := InterfaceBounds.Height - Element.Y;
+
+    Result.X2 := Result.X1 + Element.Width;
+    Result.Y1 := Result.Y2 - Element.Height;
+  end else
+  begin
+    Result.X1 := InterfaceBounds.X1 + Element.X;
+    Result.Y1 := InterfaceBounds.Y1 + Element.Y;
+
+    Result.X2 := Result.X1 + Element.Width;
+    Result.Y2 := Result.Y1 + Element.Height;
+  end;
+end;
+
+function TRSInterfaceUtils.ElementReadText(Element: TRSInterfaceElement; InterfaceBounds: TBox; Color: TColor; Font: TFontSet): String;
+begin
+  Result := OCR.Recognize(Self.ElementBounds(Element, InterfaceBounds), TOCRColorFilter.Create([Color]), Font);
+end;
+
+function TRSInterfaceUtils.ElementReadTextLines(Element: TRSInterfaceElement; InterfaceBounds: TBox; Color: TColor; Font: TFontSet): TStringArray;
+begin
+  Result := OCR.RecognizeLines(Self.ElementBounds(Element, InterfaceBounds), TOCRColorFilter.Create([Color]), Font);
+end;
+
+function TRSInterfaceUtils.ElementReadNumber(Element: TRSInterfaceElement; InterfaceBounds: TBox; Color: TColor; Font: TFontSet): Integer;
+begin
+  Result := OCR.RecognizeNumber(Self.ElementBounds(Element, InterfaceBounds), TOCRColorFilter.Create([Color]), Font);
+end;
+
+function TRSInterfaceUtils.ElementHasText(Element: TRSInterfaceElement; InterfaceBounds: TBox; Text: String; Color: TColor; Font: TFontSet; MinMatch: Single = 1): Boolean;
+begin
+  Result := OCR.Locate(Self.ElementBounds(Element, InterfaceBounds), Text, Font, TOCRColorFilter.Create([Color])) >= MinMatch;
+end;
+
+function TRSInterfaceUtils.ElementHasColor(Element: TRSInterfaceElement; InterfaceBounds: TBox; Color: TColor; MinCount: Integer = 1): Boolean;
+begin
+  Result := Target.HasColor(Color, 0, MinCount, Self.ElementBounds(Element, InterfaceBounds));
+end;
+
+procedure TRSInterfaceUtils.ElementClick(Element: TRSInterfaceElement; InterfaceBounds: TBox);
+begin
+  Target.MouseMove(Self.ElementBounds(Element, InterfaceBounds).RandomPointCenter());
+  Target.MouseClick(EMouseButton.LEFT);
+end;
+
+function TRSInterfaceUtils.ItemFind(ItemNames: TStringArray; Boxes: TBoxArray; MaxToFind: Integer = -1): TIntegerArray; overload;
+var
+  ClientImage, ItemImage: TImage;
+  I: Integer;
+begin
+  ClientImage := TImage.Create();
+
+  try
+    for I := 0 to High(Boxes) do
+    begin
+      ClientImage.SetSize(Boxes[I].Width, Boxes[I].Height);
+      ClientImage.DrawTarget([0, 0], Boxes[I]);
+
+      for ItemImage in ItemImages.Get(ItemNames) do
+        if ItemImages.Match(ItemImage, ClientImage) then
+        begin
+          Result += I;
+          if (Length(Result) = MaxToFind) then
+            Exit;
+        end;
+    end;
+  finally
+    ClientImage.Free();
+  end;
+end;
+
+function TRSInterfaceUtils.ItemFind(ItemName: String; Boxes: TBoxArray; MaxToFind: Integer = -1): TIntegerArray; overload;
+begin
+  Result := Self.ItemFind([ItemName], Boxes, MaxToFind);
+end;
+
+function TRSInterfaceUtils.ItemClick(ItemName: String; Boxes: TBoxArray; Button: EMouseButton): Boolean;
+var
+  Indices: TIntegerArray;
+begin
+  Indices := Self.ItemFind([ItemName], Boxes, 1);
+
+  if Length(Indices) > 0 then
+  begin
+    Target.MouseMove(Boxes[Indices[0]]);
+    Target.MouseClick(Button);
+
+    Result := True;
+  end;
+end;
+
+function TRSInterfaceUtils.ItemClickAny(ItemNames: TStringArray; Boxes: TBoxArray; Button: EMouseButton): Boolean;
+var
+  Indices: TIntegerArray;
+begin
+  Indices := Self.ItemFind(ItemNames, Boxes, 1);
+
+  if Length(Indices) > 0 then
+  begin
+    Target.MouseMove(Boxes[Indices[0]]);
+    Target.MouseClick(Button);
+
+    Result := True;
+  end;
+end;
+
+var
+  InterfaceUtils: TRSInterfaceUtils;

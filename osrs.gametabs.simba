@@ -1,0 +1,116 @@
+{$DEFINE INCLUDED_GAMETABS}
+{$include_once osrs.simba}
+
+type
+  ERSGameTab = enum(
+    COMBAT, STATS, QUESTS, INVENTORY, EQUIPMENT, PRAYER, MAGIC,
+    CLAN, FRIENDS, ACCOUNT, LOGOUT, OPTIONS, EMOTES, MUSIC,
+    UNKNOWN
+  );
+
+  TRSGameTabs = record
+    const COLOR_CURRENT_TAB        = TColorTolerance([$14194C, 1.401, EColorSpace.HSL, [1.512, 1.261, 0.229]]);
+    const COLOR_CURRENT_LOGOUT_TAB = TColorTolerance([$83D4E3, 0, EColorSpace.RGB, [1,1,1]]);
+  end;
+
+function TRSGameTabs.GetCurrentTab: ERSGametab;
+var
+  Tabs: TBoxArray;
+  I: Integer;
+begin
+  Tabs := Self.GetButtonBoxes();
+
+  for I := 0 to High(Tabs) do
+    if (Target.CountColor(Self.COLOR_CURRENT_TAB, Tabs[I]) > 250) then
+      Exit(ERSGameTab(I));
+
+  // Logout button is moved to top right
+  if (RSClient.ClientMode() = ERSClientMode.RESIZABLE_MODERN) and (Target.CountColor(Self.COLOR_CURRENT_LOGOUT_TAB, Tabs[ERSGameTab.LOGOUT]) > 50) then
+    Exit(ERSGameTab.LOGOUT);
+
+  Result := ERSGameTab.UNKNOWN;
+end;
+
+function TRSGameTabs.IsCurrentTab(Tab: ERSGameTab): Boolean;
+begin
+  if (Tab = ERSGameTab.LOGOUT) and (RSClient.ClientMode() = ERSClientMode.RESIZABLE_MODERN) then
+    Result := (Target.CountColor(Self.COLOR_CURRENT_LOGOUT_TAB, Self.GetButtonBox(ERSGameTab.LOGOUT)) > 50)
+  else
+    Result := (Target.CountColor(Self.COLOR_CURRENT_TAB, Self.GetButtonBox(Tab)) > 250);
+end;
+
+function TRSGameTabs.GetTabBox: TBox;
+begin
+  case RSClient.ClientMode() of
+    ERSClientMode.FIXED:
+      begin
+        Result := InterfaceUtils.BoundsFromBottomRight([-218, -299], 189, 261);
+      end;
+
+    ERSClientMode.RESIZABLE_CLASSIC:
+      begin
+        Result := InterfaceUtils.BoundsFromBottomRight([-216, -299], 189, 261);
+      end;
+
+    ERSClientMode.RESIZABLE_MODERN:
+      begin
+        if (Target.Width >= 948) then
+          Result := InterfaceUtils.BoundsFromBottomRight([-197, -305], 189, 261)
+        else
+          Result := InterfaceUtils.BoundsFromBottomRight([-197, -341], 189, 261);
+      end;
+  end;
+end;
+
+function TRSGameTabs.GetButtonBox(Tab: ERSGameTab): TBox;
+begin
+  Result := Self.GetButtonBoxes()[Tab];
+end;
+
+function TRSGameTabs.GetButtonBoxes: TBoxArray;
+begin
+  case RSClient.ClientMode() of
+    ERSClientMode.FIXED:
+      begin
+        Result := TBoxArray.Create([Target.Width - 237, Target.Height - 334], 7, 2, 30, 33, [3, 265]);
+      end;
+
+     ERSClientMode.RESIZABLE_CLASSIC:
+      begin
+        Result := TBoxArray.Create([Target.Width - 235, Target.Height - 334], 7, 2, 30, 33, [3, 265]);
+      end;
+
+    ERSClientMode.RESIZABLE_MODERN:
+      begin
+        // One row
+        if Target.Width >= 948 then
+          Result := TBoxArray.Create([Target.Width - 428, Target.Height - 35], 14, 1, 30, 33, [3, 0])
+        else
+          Result := TBoxArray.Create([Target.Width - 230, Target.Height - 71], 7, 2, 30, 33, [3, 3]);
+
+        // rearrange to match ERSGameTab layout
+        Sort(Result, [0,1,2,3,4,5,6,10,8,9,7,11,12,13], True);
+
+        // Set logout as top right corner
+        Result[ERSGameTab.LOGOUT] := [Target.Width - 20, 9, Target.Width - 11, 18];
+      end;
+  end;
+end;
+
+function TRSGameTabs.Open(Tab: ERSGameTab): Boolean;
+begin
+  if Self.IsCurrentTab(Tab) then
+    Exit(True);
+
+  for 1 to 3 do
+  begin
+    Target.MouseMove(Self.GetButtonBox(Tab).RandomPointCenter());
+    Target.MouseClick(EMouseButton.LEFT);
+
+    if SleepUntil(Self.IsCurrentTab(Tab), RandomLeft(100, 1000), 2500) then
+      Exit(True);
+  end;
+end;
+
+var
+  GameTabs: TRSGameTabs;

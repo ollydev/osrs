@@ -1,0 +1,92 @@
+{$DEFINE INCLUDED_BANK}
+{$include_once osrs.simba}
+
+type
+  TRSBankInterface = record
+    const ELEMENT_SWAP:         TRSInterfaceElement = [5, 6, 49, 21, True];
+    const ELEMENT_QUANTITY_X:   TRSInterfaceElement = [280, 6, 24, 21, True];
+    const ELEMENT_QUANTITY_ALL: TRSInterfaceElement = [305, 6, 24, 21, True];
+    const ELEMENT_QUANTITY_5:   TRSInterfaceElement = [230, 6, 24, 21, True];
+    const ELEMENT_QUANTITY_10:  TRSInterfaceElement = [255, 6, 24, 21, True];
+    const ELEMENT_QUANTITY_1:   TRSInterfaceElement = [205, 6, 24, 21, True];
+    const ELEMENT_NOTE:         TRSInterfaceElement = [155, 6, 49, 21, True];
+    const ELEMENT_ITEM:         TRSInterfaceElement = [105, 6, 49, 21, True];
+    const ELEMENT_INSERT:       TRSInterfaceElement = [55, 6, 49, 21, True];
+    const ELEMENT_CLOSE:        TRSInterfaceElement = [460, 7, 20, 20, False];
+  end;
+
+function TRSBankInterface.Bounds: TBox;
+begin
+  Result := InterfaceUtils.BoundsFromCenter(488, 800);
+end;
+
+function TRSBankInterface.IsTitle(Text: String): Boolean;
+begin
+  Result := InterfaceUtils.IsTitle(Self.Bounds(), Text);
+end;
+
+function TRSBankInterface.IsOpen: Boolean;
+begin
+  Result := Self.IsTitle('Bank') or Self.IsTitle('Tab') or Self.IsTitle('Showing') or Self.IsTitle('Equip');
+end;
+
+function TRSBankInterface.GetItemArea: TBox;
+begin
+  Result := Self.Bounds();
+  Result.X1 += 57;
+  Result.Y1 += 77;
+  Result.X2 -= 62;
+  Result.Y2 -= 43;
+end;
+
+function TRSBankInterface.GetItemBoxes: TBoxArray;
+begin
+  with Self.GetItemArea() do
+    Result := TBoxArray.Create([X1, Y1], 8, Height div 35, 35, 31, [13, 5]);
+end;
+
+function TRSBankInterface.FindItem(ItemName: String; out ItemBox: TBox): Boolean;
+var
+  Boxes: TBoxArray;
+  Arr: TIntegerArray;
+begin
+  //Boxes := Self.GetItemBoxes();
+  //Arr := InterfaceUtils.ItemFind(ItemName, Boxes, 1);
+  //Result := Length(Arr) = 1;
+  //if Result then
+  //  ItemBox := Boxes[Arr[0]];
+end;
+
+function TRSBankInterface.MouseItem(ItemName: String): Boolean;
+var
+  ItemBox: TBox;
+begin
+  Result := Self.FindItem(ItemName, ItemBox);
+  if Result then
+    Target.MouseMove(ItemBox);
+end;
+
+function TRSBankInterface.ClickItem(ItemName: String; Button: EMouseButton): Boolean;
+begin
+  Result := Self.MouseItem(ItemName);
+  if Result then
+    Target.MouseClick(Button);
+end;
+
+function TRSBankInterface.CountItemStack(ItemName: String): Integer;
+var
+  ItemBox: TBox;
+begin
+  if Self.FindItem(ItemName, ItemBox) then
+    Result := CountItemStack(ItemBox);
+end;
+
+function TRSBankInterface.HasItem(ItemName: String): Boolean;
+var
+  ItemBox: TBox;
+begin
+  Result := Self.FindItem(ItemName, ItemBox);
+end;
+
+var
+  Bank: TRSBankInterface;

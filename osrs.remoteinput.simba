@@ -1,0 +1,47 @@
+{$DEFINE INCLUDED_REMOTEINPUT}
+{$include_once osrs.simba}
+
+{$loadlib plugins/libremoteinput}
+
+type
+  TRemoteInput = record
+    EIOS: Pointer;
+    Canvas: TExternalCanvas;
+  end;
+
+var
+  RemoteInput: TRemoteInput;
+
+procedure TRemoteInput.Setup;
+var
+  T: UInt64 := GetTickCount() + 3000;
+begin
+  RIInject(GetSimbaTargetPID());
+  while (T > GetTickCount()) do
+  begin
+    Self.EIOS := EIOS_PairClient(GetSimbaTargetPID());
+    if (Self.EIOS <> nil) then
+      Break;
+  end;
+
+  Target.SetPlugin({$MACRO LOADEDLIB(libremoteinput)}, ToStr(GetSimbaTargetPID()), Self.Canvas);
+end;
+
+procedure TRemoteInput.LoseFocus; overload;
+var
+  Space: TBoxArray;
+begin
+  Space := Target.Bounds.Expand(50).Invert(Target.Bounds.Expand(500));
+  if Length(Space) > 0 then
+  begin
+    Target.MouseMove(Space.Random());
+    Target.MouseClick(EMouseButton.LEFT);
+  end;
+end;
+
+procedure TRemoteInput.LoseFocus(Delay: Integer); overload;
+begin
+  Sleep(Delay);
+
+  Self.LoseFocus();
+end;

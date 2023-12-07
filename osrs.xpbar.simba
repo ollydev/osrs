@@ -1,0 +1,69 @@
+{$DEFINE INCLUDED_XPBAR}
+{$include_once osrs.simba}
+
+type
+  ERSXPBarSize = enum(SMALL, MEDIUM, LARGE);
+
+  TRSXPBar = record
+    const XPBarSmall:  TImage = ImageFromString('IMG:AQAAAHcAAAAbAAAAAAAAAMDjPwEAAAAAwegIAAEAAAAQ5D8BAAAAAM0CAQABAAAA5Gk8CQAAAAAEEzgJAAAAANwBAADcAQAA5Gk8CQAAAAABAAAAdwAAABsAAAAgAAAAAAAAAAAAAAAAAAAAAwAAACAIEAgICAAIGAAAAAAAAAAAAAAAAAAAAAAAAAAAiVBORw0KGgoAAAANSUhEUgAAAHcAAAAbCAIAAADJbYf8AAAABnRSTlMAAAAAAABupgeRAAAAZ0lEQVR4nO3QMQ2AUBQEwe8FA5QYwAAl/oVAQoGCt9Vs7gzMOvbNprfe39dpc/uVl2aiXES5iHIR5SLKRZSLKBdRLqJcRLmIchHlIspFlIsoF1EuolxEuYhyEeUiykWUiygXUS76lB9cXvoRZ1RZ8wAAAABJRU5ErkJggg==');
+    const XPBarMedium: TImage = ImageFromString('IMG:AQAAAIEAAAAbAAAAAAAAAMDjPwEAAAAAwegIAAEAAAAQ5D8BAAAAAM0CAQABAAAAnGs5CQAAAAA8ojkJAAAAAAQCAAAEAgAAnGs5CQAAAAABAAAAgQAAABsAAAAgAAAAAAAAAAAAAAAAAAAAAwAAACAIEAgICAAIGAAAAAAAAAAAAAAAAAAAAAAAAAAAiVBORw0KGgoAAAANSUhEUgAAAIEAAAAbCAIAAADUP3siAAAABnRSTlMAAAAAAABupgeRAAAAZklEQVR4nO3RMRGAQBAEwfOCAcI3gAFC/AuBqg+Q0MlM7SroWefR7Ob7c19N7TeYEmXgy8CXgS8DXwa+DHwZ+DLwZeDLwJeBLwNfBr4MfBn4MvBl4MvAl4EvA18Gvgx8Gfgy8G2DF1aSCPicHaTBAAAAAElFTkSuQmCC');
+    const XPBarLarge:  TImage = ImageFromString('IMG:AQAAAIwAAAAbAAAAAAAAAMDjPwEAAAAAwegIAAEAAAAQ5D8BAAAAAM0CAQABAAAA4Bs4CQAAAAAgVzgJAAAAADACAAAwAgAA4Bs4CQAAAAABAAAAjAAAABsAAAAgAAAAAAAAAAAAAAAAAAAAAwAAACAIEAgICAAIGAAAAAAAAAAAAAAAAAAAAAAAAAAAiVBORw0KGgoAAAANSUhEUgAAAIwAAAAbCAIAAAAhwfCSAAAABnRSTlMAAAAAAABupgeRAAAAa0lEQVR4nO3RMQ2AUBQEwe8FA5QYwAAl/oVAQoGFt8ls7hTMOvbNhm+9v6/Txu5HWhoZpECQAkEKBCkQpECQAkEKBCkQpECQAkEKBCkQpECQAkEKBCkQpECQAkEKBCkQpECQAkEKBCnQh/QArBMZTB4wsSsAAAAASUVORK5CYII=');
+  end;
+
+function TRSXPBar.Bounds: TBox;
+
+  function Find(Img: TImage; Area: TBox; out Bounds: TBox): Boolean;
+  var
+    P: TPoint;
+  begin
+    P := Target.FindImage(Img, 0, Area);
+    if (P <> [-1, -1]) then
+    begin
+      Bounds.X1 := P.X;
+      Bounds.Y1 := P.Y;
+      Bounds.X2 := P.X + Img.Width  - 1;
+      Bounds.Y2 := P.Y + Img.Height - 1;
+
+      Result := True;
+    end;
+  end;
+
+var
+  Area: TBox;
+begin
+  // Can only currently be at top of mainscreen in vanilla client
+  Area := Target.Bounds;
+  Area.Y2 := Area.Y1 + 100;
+
+  if not Find(Self.XPBarSmall, Area, Result) and
+     not Find(Self.XPBarMedium, Area, Result) and
+     not Find(Self.XPBarLarge, Area, Result) then
+    Exit;
+end;
+
+function TRSXPBar.Size: ERSXPBarSize;
+begin
+  case Self.Bounds.Width of
+    140: Result := ERSXPBarSize.LARGE;
+    129: Result := ERSXPBarSize.MEDIUM;
+    119: Result := ERSXPBarSize.SMALL;
+  end;
+end;
+
+function TRSXPBar.Read: Int64;
+var
+  B: TBox;
+begin
+  B := Self.Bounds();
+  B.X1 += 25;
+
+  case Self.Size() of
+    ERSXPBarSize.SMALL:  Result := OCR.RecognizeNumber(B, TOCRColorFilter.Create([Colors.WHITE]), FONT_PLAIN_11);
+    ERSXPBarSize.MEDIUM: Result := OCR.RecognizeNumber(B, TOCRColorFilter.Create([Colors.WHITE]), FONT_PLAIN_12);
+    ERSXPBarSize.LARGE:  Result := OCR.RecognizeNumber(B, TOCRColorFilter.Create([Colors.WHITE]), FONT_BOLD_12);
+  end;
+end;
+
+var
+  XPBar: TRSXPBar;
+

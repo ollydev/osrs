@@ -1,0 +1,56 @@
+{$DEFINE INCLUDED_RSCLIENT}
+{$include_once osrs.simba}
+
+type
+  ERSClientMode = enum(
+    UNKNOWN,
+    FIXED,
+    RESIZABLE_CLASSIC,
+    RESIZABLE_MODERN
+  );
+
+  TRSClient = record
+    PID: TProcessID;
+  end;
+
+function TRSClient.ClientMode(Default: ERSClientMode = ERSClientMode.FIXED): ERSClientMode;
+begin
+  // Offset to a point in the music tab in the bottom right as it's always visible when logged in
+  // Two colors each because tab can be active(red) or not(grey)
+  case Target.GetColor([Target.Width - 4, Target.Height - 21]) of
+    2435372, 658467: Result := ERSClientMode.FIXED;
+    3555653, 922425: Result := ERSClientMode.RESIZABLE_MODERN;
+    2896180, 790059: Result := ERSClientMode.RESIZABLE_CLASSIC;
+    else
+      Result := Default;
+  end;
+end;
+
+function TRSClient.IsLoggedIn: Boolean; overload;
+begin
+  Result := Self.ClientMode(ERSClientMode.UNKNOWN) <> ERSClientMode.UNKNOWN;
+end;
+
+function TRSClient.IsLoggedIn(WaitTime: Integer; Interval: Integer = -1): Boolean; overload;
+begin
+  if (Interval = -1) then
+    Interval := RandomLeft(50, 1500);
+
+  Result := SleepUntil(Self.IsLoggedIn(), Interval, WaitTime);
+end;
+
+function TRSClient.IsLoggedOut: Boolean; overload;
+begin
+  Result := not Self.IsLoggedIn();
+end;
+
+function TRSClient.IsLoggedOut(WaitTime: Integer; Interval: Integer = -1): Boolean; overload;
+begin
+  if (Interval = -1) then
+    Interval := RandomLeft(50, 1500);
+
+  Result := SleepUntil(Self.IsLoggedOut(), Interval, WaitTime);
+end;
+
+var
+  RSClient: TRSClient;

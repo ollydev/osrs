@@ -1,0 +1,57 @@
+{$DEFINE INCLUDED_BANKPIN}
+{$include_once osrs.simba}
+
+type
+  TRSBankPinInterface = record
+    const ELEMENT_EXIT:     TRSInterfaceElement = [371, 228, 38, 21, False];
+    const ELEMENT_PROGRESS: TRSInterfaceElement = [407, 6, 73, 21, False];
+    const ELEMENT_BOX_1:    TRSInterfaceElement = [21, 83, 63, 63, False];
+    const ELEMENT_BOX_2:    TRSInterfaceElement = [115, 83, 63, 63, False];
+    const ELEMENT_BOX_3:    TRSInterfaceElement = [209, 83, 63, 63, False];
+    const ELEMENT_BOX_4:    TRSInterfaceElement = [293, 83, 63, 63, False];
+    const ELEMENT_BOX_5:    TRSInterfaceElement = [21, 155, 63, 63, False];
+    const ELEMENT_BOX_6:    TRSInterfaceElement = [115, 155, 63, 63, False];
+    const ELEMENT_BOX_7:    TRSInterfaceElement = [209, 155, 63, 63, False];
+    const ELEMENT_BOX_8:    TRSInterfaceElement = [21, 227, 63, 63, False];
+    const ELEMENT_BOX_9:    TRSInterfaceElement = [115, 227, 63, 63, False];
+    const ELEMENT_BOX_10:   TRSInterfaceElement = [209, 227, 63, 63, False];
+  end;
+
+function TRSBankPinInterface.Bounds: TBox;
+begin
+  Result := InterfaceUtils.BoundsFromCenter(488, 305);
+  Result.Y1 += 5;
+  Result.Y2 += 5;
+end;
+
+function TRSBankPinInterface.GetProgress: Integer;
+begin
+  Result := InterfaceUtils.ElementReadText(Self.ELEMENT_PROGRESS, Self.Bounds(), $00FFFF, FONT_QUILL_8).Count('*');
+end;
+
+function TRSBankPinInterface.IsOpen: Boolean;
+begin
+  Result := InterfaceUtils.ElementHasText(Self.ELEMENT_EXIT, Self.Bounds(), 'Exit', Colors.RED, FONT_QUILL_8) or
+            InterfaceUtils.ElementHasText(Self.ELEMENT_EXIT, Self.Bounds(), 'Exit', Colors.WHITE, FONT_QUILL_8);
+end;
+
+function TRSBankPinInterface.ClickDigit(Digit: Integer): Boolean;
+const
+  Elements = [
+    TRSBankPinInterface.ELEMENT_BOX_1, TRSBankPinInterface.ELEMENT_BOX_2, TRSBankPinInterface.ELEMENT_BOX_3, TRSBankPinInterface.ELEMENT_BOX_4, TRSBankPinInterface.ELEMENT_BOX_5,
+    TRSBankPinInterface.ELEMENT_BOX_6, TRSBankPinInterface.ELEMENT_BOX_7, TRSBankPinInterface.ELEMENT_BOX_8, TRSBankPinInterface.ELEMENT_BOX_9, TRSBankPinInterface.ELEMENT_BOX_10
+  ];
+var
+  Element: TRSInterfaceElement;
+begin
+  for Element in Elements do
+    if InterfaceUtils.ElementHasText(Element, Self.Bounds(), ToStr(Digit), $007FFF, FONT_BOLD_12) then
+    begin
+      InterfaceUtils.ElementClick(Element, Self.Bounds());
+
+      Exit(True);
+    end;
+end;
+
+var
+  BankPin: TRSBankPinInterface;

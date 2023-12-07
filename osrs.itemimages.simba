@@ -1,0 +1,144 @@
+{$DEFINE INCLUDED_ITEMIMAGES}
+{$include_once osrs.simba}
+
+type
+  TRSItemImages = record
+    ItemList: TStringMap<TIntegerArray>;
+    ItemImages: TStringMap<TImage>;
+
+    ItemsZipFile: String;
+    ItemsZipHash: String;
+  end;
+
+function TRSItemImages.Get(ItemName: String): TImageArray; overload;
+
+  // check if we have previously unzipped, if so return the path
+  // otherwise unzip and cache it for text time
+  function UnzipImage(ItemID: String; out FileName: String): Boolean;
+  var
+    Img: TImage;
+  begin
+    // Do we have it cached
+    FileName := SimbaEnv.TempPath + ItemID + '_' + Self.ItemsZipHash + '.png';
+    if not FileExists(FileName) then
+    begin
+      Img := TImage.CreateFromZip(Self.ItemsZipFile, ItemID + '.png');
+      Img.Save(FileName);
+      Img.Free();
+    end;
+  end;
+
+var
+  ItemID: Integer;
+  FileName: String;
+  Img: TImage;
+begin
+  for ItemID in Self.ItemList.Value[ItemName] do
+  begin
+    Img := Self.ItemImages.Value[ToString(ItemID)];
+    if (Img = nil) then
+    begin
+      UnzipImage(ToString(ItemID), FileName);
+
+      Img := TImage.Create(FileName);
+      Img.FreeOnTerminate := True;
+
+      Self.ItemImages.Value[ToString(ItemID)] := Img;
+    end;
+
+    Result += Img;
+  end;
+
+  if Length(Result) = 0 then
+    raise "Unknown item: " + ItemName;
+end;
+
+function TRSItemImages.Get(ItemNames: TStringArray): TImageArray; overload;
+var
+  ItemName: String;
+begin
+  for ItemName in ItemNames do
+    Result += Self.Get(ItemName);
+end;
+
+function TRSItemImages.Match(ItemImage, ClientImage: TImage): Boolean;
+var
+  ItemImageBorder, ClientImageBorder: TPointArray;
+  Align: TPoint;
+  AlignedImage, AlignedTemplate: TImage;
+  ClearTPA: TPointArray;
+  ClearColor: TColor;
+begin
+  ItemImageBorder := ItemImage.Target.FindColor(RSColors.ITEM_BORDER, 0);
+  if (Length(ItemImageBorder) = 0) then
+    Exit;
+  ClientImageBorder := ClientImage.Target.FindColor(RSColors.ITEM_BORDER, 0);
+  if (Length(ClientImageBorder) = 0) then
+    Exit;
+
+  with ClientImageBorder.Bounds() do
+  begin
+    ClientImage.Crop([X1, Y1, X2, Y2]);
+    ClientImageBorder := ClientImageBorder.Offset([-X1,-Y1]);
+  end;
+
+  // Use highest Y point of both images for alignment
+  // TPA is already sorted like this with how FindColors operates.
+  Align.X := Max(0, ItemImageBorder[High(ItemImageBorder)].X - ClientImageBorder[High(ClientImageBorder)].X);
+  Align.Y := Max(0, ItemImageBorder[High(ItemImageBorder)].Y - ClientImageBorder[High(ClientImageBorder)].Y);
+
+  AlignedImage := ItemImage.Copy();
+  AlignedTemplate := TImage.Create(AlignedImage.Width, AlignedImage.Height);
+  AlignedTemplate.DrawImage(ClientImage, Align);
+
+  // find background and item shadow on item image to clear on both iamges
+  ClearTPA := AlignedImage.Target.FindColor(0, 0) + AlignedImage.Target.FindColor(RSColors.ITEM_SHADOW, 0);
+
+  // The client image has stack numbers, so clear these on the item image aswell
+  for ClearColor in [RSColors.ITEM_TEXT_YELLOW, RSColors.ITEM_TEXT_WHITE, RSColors.ITEM_TEXT_GREEN, RSColors.ITEM_BORDER] do
+    ClearTPA += AlignedTemplate.Target.FindColor(ClearColor, 0);
+
+  AlignedImage.DrawColor := 0;
+  AlignedImage.DrawTPA(ClearTPA);
+  AlignedTemplate.DrawColor := 0;
+  AlignedTemplate.DrawTPA(ClearTPA);
+
+  //AlignedImage.Save('img.bmp', True);
+  //AlignedTemplate.Save('templ.bmp', True);
+  //Halt;
+
+  // Use .Compare if we ever need tolerance
+  Result := AlignedImage.PixelDifference(AlignedTemplate) = 0;
+
+  AlignedImage.Free();
+  AlignedTemplate.Free();
+end;
+
+
+procedure TRSItemImages.Setup(ZipFile, NamesFile: String);
+
+  function StrToIntArray(Value: String): TIntegerArray; static;
+  var
+    Arr: TStringArray;
+    I: Integer;
+  begin
+    Arr := Value.Split(',');
+    SetLength(Result, Length(Arr));
+    for I := 0 to High(Arr) do
+      Result[I] := Arr[I].ToInteger();
+  end;
+
+begin
+  Self.ItemList.Load(NamesFile, '=', @StrToIntArray);
+
+  Self.ItemsZipFile := ZipFile;
+  Self.ItemsZipHash := HashFile(EHashAlgo.SHA1, ZipFile);
+end;
+
+var
+  ItemImages: TRSItemImages;
+
+begin
+  ItemImages.Setup({$MACRO DIR} + 'itemimages\images.zip',
+                   {$MACRO DIR} + 'itemimages\items.txt');
+end;

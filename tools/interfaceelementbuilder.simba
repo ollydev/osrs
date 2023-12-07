@@ -1,0 +1,288 @@
+{$i osrs/osrs}
+
+var
+  Interfaces: array of record
+    Name: String;
+    Bounds: TBox;
+    Fields: TRTTIFields;
+  end;
+
+begin
+  Interfaces += ['Bank', Bank.Bounds(), RTTIFields(Bank)];
+  Interfaces += ['BankPin', BankPin.Bounds(), RTTIFields(BankPin)];
+  Interfaces += ['Login', Login.Bounds(), RTTIFields(Login)];
+  Interfaces += ['Logout', Logout.Bounds(), RTTIFields(Logout)];
+  Interfaces += ['Options', Options.Bounds(), RTTIFields(Options)];
+end;
+
+type
+  TRSInterfaceBuilder = record
+    Form: TLazForm;
+    ShapeBox: TShapeBox;
+    Name: String;
+    Bounds: TBox;
+    Menu: TLazMainMenu;
+    MenuItemDirectionUp: TLazMenuItem;
+    MenuItemDirectionDown: TLazMenuItem;
+    InterfaceMenu: TLazMenuItem;
+    Elements: array of record
+      Name: String;
+      Value: String;
+    end;
+  end;
+
+function TRSInterfaceBuilder.ElementToBox(Element: TRSInterfaceElement): TBox;
+begin
+  if Element.FromBottom then
+  begin
+    Result.X1 := Element.X;
+    Result.Y2 := Self.Bounds.Height - Element.Y;
+
+    Result.X2 := Result.X1 + Element.Width;
+    Result.Y1 := Result.Y2 - Element.Height;
+  end else
+  begin
+    Result.X1 := Element.X;
+    Result.Y1 := Element.Y;
+
+    Result.X2 := Result.X1 + Element.Width;
+    Result.Y2 := Result.Y1 + Element.Height;
+  end;
+end;
+
+function TRSInterfaceBuilder.BoxToElement(Box: TBox; FromBottom: Boolean): TRSInterfaceElement;
+begin
+  if FromBottom then
+  begin
+    Result.X := Box.X1;
+    Result.Y := Self.Bounds.Height - Box.Y2;
+  end else
+  begin
+    Result.X := Box.X1;
+    Result.Y := Box.Y1;
+  end;
+
+  Result.FromBottom := FromBottom;
+  Result.Width := Box.Width - 1;
+  Result.Height := Box.Height - 1;
+end;
+
+procedure TRSInterfaceBuilder.DoOffsetDirectionClick(Sender: TObject);
+var
+  Shape: TShapeBoxShape;
+  FromBottom: Boolean;
+begin
+  Shape := Self.ShapeBox.GetSelectedShape();
+  if (Shape = []) then
+    Exit;
+
+  FromBottom := (Sender = Self.MenuItemDirectionDown);
+
+  Self.MenuItemDirectionUp.Checked := not FromBottom;
+  Self.MenuItemDirectionDown.Checked := FromBottom;
+
+  Boolean(Shape.UserData^) := FromBottom;
+
+  Self.ShapeBox.RePaint();
+end;
+
+procedure TRSInterfaceBuilder.DoSelectionChanged(Sender: TObject);
+var
+  Shape: TShapeBoxShape;
+  FromBottom: Boolean;
+begin
+  Shape := Self.ShapeBox.GetSelectedShape();
+  if Shape = [] then
+    Exit;
+
+  FromBottom := Boolean(Self.ShapeBox.GetSelectedShape().UserData^);
+  Self.MenuItemDirectionUp.Checked := not FromBottom;
+  Self.MenuItemDirectionDown.Checked := FromBottom;
+end;
+
+procedure TRSInterfaceBuilder.DoPaintShapeBox(Sender: TImageBox; Bitmap: TImageBoxCanvas; Rect: TLazRect);
+var
+  Shape: TShapeBoxShape;
+begin
+  Shape := Self.ShapeBox.GetSelectedShape();
+  if Shape = [] then
+    Exit;
+
+  if Self.MenuItemDirectionDown.Checked then
+  begin
+    Bitmap.DrawLineGap(TPoint.Create(Shape.Box.X1, Shape.Box.Y2), TPoint.Create(Rect.Left, Shape.Box.Y2), 5, $00FFFF);
+    Bitmap.DrawLineGap(TPoint.Create(Shape.Box.X1, Shape.Box.Y2), TPoint.Create(Shape.Box.X1, Rect.Bottom), 5, $00FFFF);
+  end else
+  begin
+    Bitmap.DrawLineGap(TPoint.Create(Shape.Box.X1, Shape.Box.Y1), TPoint.Create(Rect.Left, Shape.Box.Y1), 5, $00FFFF);
+    Bitmap.DrawLineGap(TPoint.Create(Shape.Box.X1, Shape.Box.Y1), TPoint.Create(Shape.Box.X1, Rect.Top), 5, $00FFFF);
+  end;
+end;
+
+procedure TRSInterfaceBuilder.OnUpdateImageButtonClick(Sender: TObject);
+begin
+  Self.ShapeBox.SetBackgroundFromTarget(Target, Self.Bounds);
+end;
+
+procedure TRSInterfaceBuilder.OnFormClose(Sender: TObject; var CloseAction: ELazFormCloseAction);
+begin
+  Self.PrintElements();
+end;
+
+procedure TRSInterfaceBuilder.DoInterfaceMenuClick(Sender: TObject);
+
+  function SortByName(constref Left, Right: record Name: String; Value: String; end): Integer; static;
+  begin
+    Result := -CompareText(Left.Name, Right.Name);
+  end;
+
+  procedure SetInterface(Name: String; Bounds: TBox; Fields: TRTTIFields);
+  var
+    Field: TRTTIField;
+  begin
+    Self.Name := Name;
+    Self.Bounds := Bounds;
+    Self.Elements.Clear();
+
+    for Field in Fields do
+      if (Field.VarType = 'TRSInterfaceElement') then
+        Self.Elements += [Field.Name, Field.Value];
+
+    Self.Elements := Sorted(Self.Elements, @SortByName);
+  end;
+
+var
+  I: Integer;
+begin
+  for I := 0 to High(Interfaces) do
+    if (Interfaces[I].Name = TLazMenuItem(Sender).Caption) then
+      SetInterface(Interfaces[I].Name, Interfaces[I].Bounds, Interfaces[I].Fields);
+
+  Self.OnUpdateImageButtonClick(nil);
+  Self.LoadElements();
+end;
+
+procedure TRSInterfaceBuilder.LoadElements;
+
+  function StringToElement(Str: String): TRSInterfaceElement;
+  begin
+    Result.X      := Str.Between('X = ', ',').ToInteger();
+    Result.Y      := Str.Between('Y = ', ',').ToInteger();
+    Result.Width  := Str.Between('WIDTH = ', ',').ToInteger();
+    Result.Height := Str.Between('HEIGHT = ', ',').ToInteger();
+    Result.FromBottom := Str.Between('FROMBOTTOM = ', '}').ToBoolean();
+  end;
+
+var
+  I: Integer;
+  Element: TRSInterfaceElement;
+begin
+  Self.ShapeBox.BeginUpdate();
+  Self.ShapeBox.DeleteAllShapes();
+
+  for I := 0 to High(Self.Elements) do
+  begin
+    Element := StringToElement(Self.Elements[I].Value);
+
+    Self.ShapeBox.ManualAddBox(Self.ElementToBox(Element), Self.Elements[I].Name, Element.FromBottom);
+  end;
+
+  Self.ShapeBox.EndUpdate();
+end;
+
+procedure TRSInterfaceBuilder.PrintElements;
+var
+  I, MaxLen: Integer;
+  Shape: TShapeBoxShape;
+  Names: TStringArray;
+  Padding, Str: String;
+begin
+  Names.SetLength(Self.ShapeBox.GetCount());
+  for I := 0 to Self.ShapeBox.GetCount() - 1 do
+  begin
+    Names[I] := Self.ShapeBox.GetShape(I).Name;
+    Names[I] := Names[I].ToUpper().Replace(' ', '_');
+    if (not Names[I].StartsWith('ELEMENT_')) then
+      Names[I] := 'ELEMENT_' + Names[I];
+
+    if (Names[I].Length() > MaxLen) then
+      MaxLen := Names[I].Length();
+  end;
+
+  ClearSimbaOutput();
+
+  for I := 0 to Self.ShapeBox.GetCount() - 1 do
+  begin
+    Shape := Self.ShapeBox.GetShape(I);
+    Padding := ' ' * (MaxLen - Names[I].Length());
+    with Self.BoxToElement(Shape.Box, Boolean(Shape.UserData^)) do
+      Str += '    const %s: %sTRSInterfaceElement = [%d, %d, %d, %d, %s];'.Format([Names[I], Padding, X, Y, Width, Height, ToString(FromBottom)]) + LINE_SEP;
+  end;
+
+  Str := Str.TrimRight();
+  WriteLn(Str);
+  SetClipBoard(Str);
+end;
+
+procedure TRSInterfaceBuilder.Run;
+var
+  Button: TLazButton;
+  I: Integer;
+begin
+  try
+    Self.Form := TLazForm.Create();
+    Self.Form.Position := ELazFormPosition.ScreenCenter;
+    Self.Form.Caption := 'RS Interface Builder';
+    Self.Form.Width := 1200;
+    Self.Form.Height := 1000;
+    Self.Form.Font.Size := 10;
+    Self.Form.OnClose := @Self.OnFormClose;
+
+    Self.Menu := TLazMainMenu.Create(Self.Form);
+    Self.Menu.Parent := Self.Form;
+    Self.InterfaceMenu := Self.Menu.AddMenu('Select Interface');
+    with Self.Menu.AddMenu('Set Offset Direction') do
+    begin
+      Self.MenuItemDirectionUp := AddMenu('Top');
+      Self.MenuItemDirectionUp.OnClick := @Self.DoOffsetDirectionClick;
+      Self.MenuItemDirectionDown := AddMenu('Bottom');
+      Self.MenuItemDirectionDown.OnClick := @Self.DoOffsetDirectionClick;
+    end;
+
+    Self.ShapeBox := TShapeBox.Create(Self.Form, SizeOf(Boolean)); // UserData will store TRSInterfaceElement.FromBottom boolean
+    Self.ShapeBox.Parent := Self.Form;
+    Self.ShapeBox.Align := ELazAlign.Client;
+    Self.ShapeBox.OnImgPaint := @Self.DoPaintShapeBox;
+    Self.ShapeBox.QueryName := True;
+    Self.ShapeBox.OnSelectionChange := @Self.DoSelectionChanged;
+
+    Self.ShapeBox.PathButton.Hide();
+    Self.ShapeBox.PolyButton.Hide();
+    Self.ShapeBox.PointButton.Hide();
+    Self.ShapeBox.PrintButton.Hide();
+
+    Self.ShapeBox.CopyButton.Caption := 'Copy Element';
+    Self.ShapeBox.BoxButton.Caption := 'New Element';
+    Self.ShapeBox.NameButton.Caption := 'Name Element';
+    Self.ShapeBox.DeleteButton.Caption := 'Delete Element';
+    Self.ShapeBox.DeleteAllButton.Caption := 'Delete All Elements';
+
+    Self.ShapeBox.SetBackgroundFromTarget(Target);
+
+    for I := 0 to High(Interfaces) do
+      Self.InterfaceMenu.AddMenu(Interfaces[I].Name).OnClick := @Self.DoInterfaceMenuClick;
+
+    Self.Form.ShowModal();
+  except
+    Writeln(GetExceptionMessage());
+  finally
+    Self.Form.Free();
+  end;
+end;
+
+var
+  InterfaceBuilder: TRSInterfaceBuilder;
+
+begin
+  InterfaceBuilder.Run();
+end;

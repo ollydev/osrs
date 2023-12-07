@@ -1,0 +1,88 @@
+{$DEFINE INCLUDED_LOGIN}
+{$include_once osrs.simba}
+
+type
+  TRSLoginPlayer = record
+    User: String;
+    Password: String;
+    Pin: String;
+  end;
+
+  TRSLoginInterface = record
+    const ELEMENT_WORLD:         TRSInterfaceElement = [17, 465, 76, 15, False];
+    const ELEMENT_PASS_FIELD:    TRSInterfaceElement = [340, 257, 214, 17, False];
+    const ELEMENT_LOGIN_FIELD:   TRSInterfaceElement = [310, 240, 243, 17, False];
+    const ELEMENT_LOGIN_BUTTON:  TRSInterfaceElement = [234, 305, 135, 32, False];
+    const ELEMENT_EXISTING_USER: TRSInterfaceElement = [395, 275, 135, 32, False];
+    const ELEMENT_RESPONSE:      TRSInterfaceElement = [210, 182, 343, 57, False];
+
+    Players: array of TRSLoginPlayer;
+    PlayerIndex: Integer;
+  end;
+
+function TRSLoginInterface.Bounds: TBox;
+begin
+  Result.X1 := (Target.Width - 1) div 2 - (765 div 2);
+  Result.X2 := (Target.Width - 1) div 2 + (765 div 2);
+  Result.Y2 := 502;
+end;
+
+function TRSLoginInterface.GetLoginMessage: String;
+begin
+  Result := InterfaceUtils.ElementReadTextLines(Self.ELEMENT_RESPONSE, Self.Bounds(), $00FFFF, FONT_BOLD_12).Join(' ');
+end;
+
+function TRSLoginInterface.IsOpen: Boolean;
+begin
+  Result := InterfaceUtils.ElementHasText(Self.ELEMENT_WORLD, Self.Bounds(), 'World', Colors.WHITE, FONT_BOLD_12);
+end;
+
+function TRSLoginInterface.EnterField(Element: TRSInterfaceElement; Details: String): Boolean;
+begin
+  if InterfaceUtils.ElementHasText(Element, Self.Bounds(), Details + ' ', $00FFFF, FONT_BOLD_12) then
+    Exit(True);
+
+  // Move caret
+  while not SleepUntil(InterfaceUtils.ElementHasColor(Element, Self.Bounds(), $00FFFF, 15), 100, RandomLeft(800, 1600)) do
+  begin
+    if not Self.IsOpen() then
+      Exit(False);
+
+    Target.KeyPress(EKeyCode.TAB);
+  end;
+
+  // Erase field
+  while InterfaceUtils.ElementHasColor(Element, Self.Bounds(), $FFFFFF) do
+  begin
+    if not Self.IsOpen() then
+      Exit(False);
+
+    Target.KeyPress(EKeyCode.BACK);
+  end;
+  Target.KeySend(Details);
+
+  Result := True;
+end;
+
+function TRSLoginInterface.EnterGame: Boolean;
+var
+  T: UInt64;
+begin
+  T := GetTickCount() + 3500;
+  while (T > GetTickCount()) do
+  begin
+    if ClickText('CLICK HERE TO PLAY', Colors.WHITE, FONT_BOLD_12) then
+      Break;
+    Sleep(100);
+  end;
+
+  Result := RSClient.IsLoggedIn(5000);
+end;
+
+procedure TRSLoginInterface.AddPlayer(User, Pass: String; Pin: String = '');
+begin
+  Self.Players += [User, Pass, Pin];
+end;
+
+var
+  Login: TRSLoginInterface;

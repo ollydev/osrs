@@ -1,0 +1,78 @@
+{$DEFINE INCLUDED_CHOOSEOPTION}
+{$include_once osrs.simba}
+
+type
+  TRSOption = record
+    Text: String;
+    Bounds: TBox;
+  end;
+  TRSOptionArray = array of TRSOption;
+
+  TRSChooseOption = record
+    const TitleImg: TImage = ImageFromString('IMG:AQAAAGYAAAASAAAAAAAAAP21aQABAAAAIKprAAEAAADI5D8BAAAAAM0CAQABAAAAOIe7BgAAAAAApLsGAAAAADQBAACYAQAAOIe7BgAAAAABAAAAZgAAABIAAAAYAAAAAAAAAAAAAAAAAAAAAwAAABgIEAgICAAAAAEAAAIAAAAAAAAAAAAAAAAAAAAAiVBORw0KGgoAAAANSUhEUgAAAGYAAAASCAIAAAAmDjziAAAAzUlEQVR4nO2U0Q2AMAhE3c4F/HX/NYzxo9oWvAO0mkBqoqTA9Qmd1mXORa1pf9IoS2S0JTLaWmRlaK+ed3X1rdU2RkT1eXjOysarvMoA9TwlG+mmLyAzNH4iC0AWcxAcWfce8fjb0sqRdGSenEpUP5BCVu3xvEs4wE63lcOjtEuTHUwnJuXH4hpspf3iSxZJVkglPCcyRGZJkeKlpFGYPMMohRjwRYpvXdTgSN2hDODtfgUfG1s5EfEWZL8zsEkj671X7BlLZLQNQJaLWhvxdfuwwsTSHQAAAABJRU5ErkJggg==');
+  end;
+
+function TRSChooseOption.IsOpen(out Bounds: TBox): Boolean; overload;
+var
+  TPA: TPointArray;
+  P: TPoint;
+begin
+  P := Target.FindImage(Self.TitleImg, 0);
+  if (P = [-1,-1]) then
+    Exit;
+
+  P.Y += Self.TitleImg.Height;
+  P.X += 1;
+
+  TPA := Target.FindColor(Colors.BLACK, 0, [P.X, P.Y, Target.Width - 1, Target.Height - 1]);
+
+  Result := Length(TPA) > 0;
+  if Result then
+    Bounds := TPA.Cluster(1, 1).SortFromFirstPoint(P)[0].Bounds.Expand(-1);
+end;
+
+function TRSChooseOption.IsOpen: Boolean; overload;
+var
+  _: TBox;
+begin
+  Result := Self.IsOpen(_);
+end;
+
+function TRSChooseOption.GetOptions: TRSOptionArray;
+var
+  I: Integer;
+  Bounds, B: TBox;
+begin
+  if Self.IsOpen(Bounds) then
+  begin
+    if (Bounds.Height < 15) then
+      Exit;
+
+    SetLength(Result, Bounds.Height div 15);
+    for I := 0 to High(Result) do
+    begin
+      B := [Bounds.X1, Bounds.Y1 + (I * 15), Bounds.X2, Bounds.Y1 + (I * 15) + 15];
+      if (B.Y2 > Bounds.Y2) then
+      begin
+        SetLength(Result, I-1);
+        Exit;
+      end;
+
+      Result[I].Text := OCR.RecognizeStatic(B, TOCRInvertColorFilter.Create([4674653, 0]), FONT_BOLD_12_SHADOW);
+      Result[I].Bounds := B;
+    end;
+  end;
+end;
+
+function TRSChooseOption.Select(Option: String): Boolean;
+begin
+
+end;
+
+function TRSChooseOption.Close: Boolean;
+begin
+
+end;
+
+var
+  ChooseOption: TRSChooseOption;

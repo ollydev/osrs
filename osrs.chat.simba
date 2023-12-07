@@ -1,0 +1,122 @@
+{$DEFINE INCLUDED_CHAT}
+{$include_once osrs.simba}
+
+type
+  TRSChat = record end;
+
+function TRSChat.Bounds: TBox;
+begin
+  Result := InterfaceUtils.BoundsFromBottomLeft([0, -165], 518, 141);
+end;
+
+function TRSChat.GetLineBoxes: TBoxArray;
+begin
+  with Self.Bounds() do
+    Result := TBoxArray.Create([X1 + 10, Y1 + 8], 1, 9, Width - 35, 13, [0, 1]);
+end;
+
+function TRSChat.GetInputLineBox: TBox;
+begin
+  Result := Self.GetLineBoxes().Last;
+end;
+
+function TRSChat.GetDisplayNameBox(out Color: TColor): TBox; overload;
+var
+  TPA: TPointArray;
+  B: TBox;
+begin
+  B := Self.GetInputLineBox();
+  for Color in [$FFFFFF, $000000] do
+  begin
+    TPA := Target.FindColor(Color, 0, B);
+    if Length(TPA) then
+      Exit(TPA.Bounds());
+  end;
+end;
+
+function TRSChat.GetDisplayNameBox(): TBox; overload;
+var
+  Color: TColor;
+begin
+  Result := Self.GetDisplayNameBox(Color);
+end;
+
+function TRSChat.GetDisplayName(): String;
+var
+  Color: TColor;
+begin
+  Result := OCR.Recognize(Self.GetDisplayNameBox(Color).Expand(2), TOCRColorFilter.Create([Color]), FONT_PLAIN_12);
+  Result := Result.TrimRight([':']);
+end;
+
+function TRSChat.GetLineTextTransparent(Line: Integer): String;
+const
+  StaticOffset = 2; // Make static text placement so RecognizeStatic can be used
+var
+  B: TBox;
+  Mat: TIntegerMatrix;
+  X,Y: Integer;
+  Colors: TIntegerArray;
+begin
+  B := Self.GetLineBoxes[Line];
+  B.Y1 -= StaticOffset;
+
+  Mat := Target.GetColorsMatrix(B);
+
+  // Shadow from above line draws over our line.
+  // Mark the shadow as a match since OCR requires 100% character match.
+  for X in Mat[StaticOffset].IndicesOf(0) do
+    Mat[StaticOffset, X] := $FFFFFF;
+
+  // Get colors from shadow -1,-1
+  for Y:=1 to Mat.Height-1 do
+    for X:=1 to Mat.Width-1 do
+      if (Mat[Y,X]=0) and (Mat[Y-1,X-1] <> 0) then
+        Colors += Mat[Y-1, X-1];
+
+  Result := OCR.RecognizeStatic(Mat, TOCRColorFilter.Create(Colors.Unique()), FONT_PLAIN_12);
+end;
+
+function TRSChat.GetLineText(Line: Integer): String;
+const
+  StaticOffset = 2; // Make static text placement so RecognizeStatic can be used
+  Background: TColorTolerance = [$6793AA, 3.287, EColorSpace.HSL, [2.025, 0.581, 0.395]];
+var
+  B: TBox;
+  BackgroundInv: TPointArray;
+  Color: TColor;
+  Colors: TIntegerArray;
+begin
+  if Self.IsTransparent() then
+    Exit(Self.GetLineTextTransparent(Line));
+
+  B := Self.GetLineBoxes[Line];
+  B.Y1 -= StaticOffset;
+
+  BackgroundInv := Target.FindColor(Background, B).Invert();
+  for Color in Target.GetColors(BackgroundInv).Unique() do
+    Colors += Color;
+
+  Result := OCR.RecognizeStatic(B, TOCRColorFilter.Create(Colors), FONT_PLAIN_12);
+end;
+
+function TRSChat.GetText: TStringArray;
+var
+  I: Integer;
+begin
+  SetLength(Result, 7);
+  for I := 0 to High(Result) do
+    Result[I] := Self.GetLineText(I);
+end;
+
+function TRSChat.IsTransparent: Boolean;
+var
+  Color: TColor;
+begin
+  Self.GetDisplayNameBox(Color);
+
+  Result := Color = (Colors.WHITE);
+end;
+
+var
+  Chat: TRSChat;

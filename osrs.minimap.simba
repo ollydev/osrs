@@ -1,0 +1,326 @@
+{$DEFINE INCLUDED_MINIMAP}
+{$include_once osrs.simba}
+
+type
+  EMinimapDot = enum(PLAYER, NPC);
+  EMinimapDots = set of EMinimapDot;
+
+  TRSMinimapInterface = record
+    const ImgDotPlayer:     TImage = ImageFromString('IMG:AQAAAAIAAAACAAAAAAAAAP21aQABAAAAIKprAAEAAADI5D8BAAAAAM0CAQABAAAA0ELlCAAAAACwQ+UIAAAAAAgAAAAIAAAA0ELlCAAAAAABAAAAAgAAAAIAAAAYAAAAAAAAAAAAAAAAAAAAAwAAABgIEAgICAAAAAEAAAIAAAAAAAAAAAAAAAAAAAAAiVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAEUlEQVR4nGP4BwYMQPzmzRsAUvoLs3htHuEAAAAASUVORK5CYII=');
+    const ImgDotNPC:        TImage = ImageFromString('IMG:AQAAAAIAAAACAAAAAAAAAI22aQABAAAAsKprAAEAAAC45D8BAAAAAP0CAQABAAAA8HXQCwAAAADwdtALAAAAAAgAAAAIAAAA8HXQCwAAAAABAAAAAgAAAAIAAAAgAAAAAAAAAAAAAAAAAAAAAwAAACAIEAgICAAIGAEAAAIAAAAAAAAAAAAAAAAAAAAAiVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFUlEQVR4nGP484fp61cGBiD19i0DADpsB7kcRHcXAAAAAElFTkSuQmCC');
+    const ImgDotItem:       TImage = ImageFromString('IMG:AQAAAAIAAAACAAAAAAAAAI22aQABAAAAsKprAAEAAAC45D8BAAAAAP0CAQABAAAA8HXQCwAAAAAwbtALAAAAAAgAAAAIAAAA8HXQCwAAAAABAAAAAgAAAAIAAAAgAAAAAAAAAAAAAAAAAAAAAwAAACAIEAgICAAIGAEAAAIAAAAAAAAAAAAAAAAAAAAAiVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFUlEQVR4nGP4p6Dwh42NAYg/MjAAACMDBECYtZu9AAAAAElFTkSuQmCC');
+    const ImgMaskResizable: TImage = ImageFromString('IMG:AQAAAJcAAACXAAAAAAAAAPD7WwcAAAAA0iEIAAEAAACA0WcBAAAAAACgXQgAAAAA6EVpAAEAAABFogAAAQAAAPD7WwcAAAAAryIIAAEAAADw+1sHAAAAAAmGCAABAAAAQPxbBwAAAACgrd4GAAAAAED8WwcAAAAAcocIAAEAAAAAoF0IAAAAAOhFaQABiVBORw0KGgoAAAANSUhEUgAAAJcAAACXCAIAAACX/V4uAAAABnRSTlMA/wD/AP83WBt9AAACjElEQVR4nO3ayW1DMRAEUeWftHwSYFvL30jWTKteBGQXwBNvt3T3+50+gj66j0Nf5ZsMzGbUpZaVs+h4dLsX6ElaoWNtoOepja5zGD1YMXSOS+jxCqATDEMPCaFnn4IedSF66unogSej512KHnsOelUAPflQ9Jgwev4R6A1LoCNcQE9XDh3kOHqxougsR9BblUbH2YdeqQE60RZ6nzboUO/RyzRD53pCD9IYne6B3qE9OqAJB7FiAhOGMGEIE4YwYQgThjBhCCsmMGEIE4awYgIThjBhCCsmMGEIKyYwYQgrJjBhCCsmMGEIKyYwYQgrJrBiAhOGsGICE4awYgIrJjBhCCsmsGICKyawYggTJrBiAismsGICE4awYgIrJrBiAismsGICKyawYgIrJrBiAismsGICE4YwZHu+qAmsmMCKCayYwIoJ/LSRwIoJrJjAz4wJrJjAigms2N7tH/o8OsOKCayYwIoJrNje/4RW7MiKCayY4EVFQ/byOqEVe7FigrcVDdnFp4RW7GKjoiHr205oxfqsmGBXRUNWtjehFSs7UNGQNR1LaMWaDlc0ZDVnElqxmpMVDVnH+YSGrMOK7V1NaMgKrNjemISGXGxkNiuuN7GfIRdY0c+QUy1NaMUZVic05HBMQkMORCY05BB0wAd6h97oer/QU3RFd3tCD9ISHe0JPUg/dLE36FmaoXO9Ry/TCd1qC71PD3SlfeiVqqP77EYPVRod5wh6q7roMgfRc1VENzmFHq0WusYF9HQl0BFGoDeE0fMPRY8JoCefg151KXrsyeh5p6MHXoieegp6VAg9+zD0kAXQCS6hxyuPDrSBnqcbutcf9BjN0fnsN4jxQlgujdm+xTcU+gEZOY6ldmjeqAAAAABJRU5ErkJggg==');
+    const ImgMaskFixed:     TImage = ImageFromString('IMG:AQAAAJcAAACXAAAAAAAAAPD7XAcAAAAA0iEIAAEAAAAQ4WABAAAAAACgXggAAAAA6EVpAAEAAABFogAAAQAAAPD7XAcAAAAAryIIAAEAAADw+1wHAAAAAAmGCAABAAAAQPxcBwAAAAAQm98GAAAAAED8XAcAAAAAcocIAAEAAAAAoF4IAAAAAOhFaQABiVBORw0KGgoAAAANSUhEUgAAAJcAAACXCAIAAACX/V4uAAAABnRSTlMA/wD/AP83WBt9AAACiklEQVR4nO3Vi23DMBAE0fTfdIIEyAexLVkSyblbz6uA3AHBt7dE75vo0+nbdqcr6Ju9gHnxzDndynjmHIyNd4veoxU61j56ocLoNGfQm1VCt7iK3o9G7z8SvSWEnn08etG16LXnotedj154HXrpOehVGfTqQ9FjkujtB6Fn5NEFrqHXq4WucQo9WkV0k4PoueqiyzyNHqo6us8eep9O6FYP0LP0Qxe7QQ/SFd3tD3qK3uh6X+gREpgwhAlDWDGBCUOYMIQJQ5gwhBUTmDCECUOYMIQVE5gwhBUTmDCEFROYMIQJQ1gxgQlDWDGBCUNYMYEVE5gwhBUTWDGBFUNYMYEJE1gxgRVDmDCBFROYMIEVE1ixPT/FBFZMYMUEVkxgxQRWTGDFBFZMYMUEVkxgxQRWTGDFBPcrGrKRhwmt2MhWRUN2YcUEVkywU9GQLVgxgRXb209oxfqsmMCKCayYwIoJTJjAt9jeUwmtWJwVEzxb0ZBlHUhoxbKsmOBYRUMWdDihFQuyYoIzFQ1ZysmEVizlfEVDFnEpoRWLuFrRkLgBCa2IG1PRkKBhCQ1JGZzQkOtNSWjFxWZVNOQyExMaco3pCQ0526KEtpxkdT9DDoclNOQocMIf9A5d0d1u0IP0QxfbRI9THd3nCHqriugmp9Cj1ULXuIZej0cXGISekURvPxq952r03tPQw65DLz0fvfBc9Lpr0WuPRy8KoWcfid6SRu9/Fb1fGXSI8+jl6qGLHEOvVRid5ln0TuXRgfbRCzVBZ9pCb9MKHes+epWG6GT/0Xu0RYf7RS/RHJ3vE71BBBOGMGEIEyawYgIrhjBhAismsGIIE4YwYQ77hTBhAivmsF8IE2Z6tXIfwIKccLNf08YAAAAASUVORK5CYII=');
+  end;
+
+function TRSMinimapInterface.Center: TPoint;
+const
+  ClientModeToOffset: array[ERSClientMode] of TPoint = [
+    [],         // UNKNOWN
+    [-123, 84], // FIXED
+    [-82, 84],  // RESIZABLE_CLASSIC
+    [-82, 84]   // RESIZABLE_MODERN
+  ];
+begin
+  Result.X := Target.Width;
+  Result := Result.Offset(ClientModeToOffset[RSClient.ClientMode()]);
+end;
+
+function TRSMinimapInterface.Bounds(Radius: Integer = 75): TBox;
+begin
+  Result := Self.GetCircle(Radius).Bounds();
+end;
+
+function TRSMinimapInterface.GetCircle(Radius: Integer = 75): TCircle;
+begin
+  with Self.Center() do
+  begin
+    Result.X := X;
+    Result.Y := Y;
+    Result.Radius := Radius;
+  end;
+end;
+
+function TRSMinimapInterface.GetImage: TImage;
+begin
+  Result := TImage.CreateFromTarget(Self.Bounds());
+  Result.DrawImage(Self.GetMask(), [0, 0]);
+end;
+
+function TRSMinimapInterface.GetCompassBox: TBox;
+const
+  ClientModeToOffset: array[ERSClientMode] of TPoint = [
+    [],         // UNKNOWN
+    [-81, -64], // FIXED
+    [-78, -62], // RESIZABLE_CLASSIC
+    [-78, -62]  // RESIZABLE_MODERN
+  ];
+begin
+  Result := TBox.Create(Self.Center().Offset(ClientModeToOffset[RSClient.ClientMode()]), 17, 17);
+end;
+
+function TRSMinimapInterface.GetHPBox: TBox;
+const
+  ClientModeToOffset: array[ERSClientMode] of TPoint = [
+    [],          // UNKNOWN
+    [-98, -26],  // FIXED
+    [-101, -21], // RESIZABLE_CLASSIC
+    [-101, -21]  // RESIZABLE_MODERN
+  ];
+begin
+  Result := TBox.Create(Self.Center().Offset(ClientModeToOffset[RSClient.ClientMode()]), 24, 13);
+end;
+
+function TRSMinimapInterface.GetRunBox: TBox;
+const
+  ClientModeToOffset: array[ERSClientMode] of TPoint = [
+    [],          // UNKNOWN
+    [-88, 40],   // FIXED
+    [-101, -21], // RESIZABLE_CLASSIC
+    [-101, -21]  // RESIZABLE_MODERN
+  ];
+begin
+  Result := TBox.Create(Self.Center().Offset(ClientModeToOffset[RSClient.ClientMode()]), 24, 13);
+end;
+
+function TRSMinimapInterface.GetSpecBox: TBox;
+const
+  ClientModeToOffset: array[ERSClientMode] of TPoint = [
+    [],          // UNKNOWN
+    [-66, 65],   // FIXED
+    [-69, 70], // RESIZABLE_CLASSIC
+    [-69, 70]  // RESIZABLE_MODERN
+  ];
+begin
+  Result := TBox.Create(Self.Center().Offset(ClientModeToOffset[RSClient.ClientMode()]), 24, 13);
+end;
+
+function TRSMinimapInterface.GetXPBox: TBox;
+const
+  ClientModeToOffset: array[ERSClientMode] of TPoint = [
+    [],          // UNKNOWN
+    [-113, -50], // FIXED
+    [-116, -44], // RESIZABLE_CLASSIC
+    [-116, -44]  // RESIZABLE_MODERN
+  ];
+begin
+  Result := TBox.Create(Self.Center().Offset(ClientModeToOffset[RSClient.ClientMode()]), 12, 12);
+end;
+
+function TRSMinimapInterface.ReadOrb(Box: TBox): Integer;
+begin
+  Box.Y1 := Box.Y1 + 10;
+  Box.X2 := Box.X1 + 22;
+
+  Result := OCR.RecognizeNumber(Box, TOCRShadowFilter.Create(), FONT_PLAIN_11);
+end;
+
+function TRSMinimapInterface.GetOrbCircle(Box: TBox): TCircle;
+begin
+  Result.X := (Box.X2 - 12);
+  Result.Y := (Box.Y2 - 12);
+  Result.Radius := 13;
+end;
+
+function TRSMinimapInterface.ClickOrb(Box: TBox): Boolean;
+begin
+  //ShowOnClient(Self.GetOrbCircle(Box).Edge);
+
+  WriteLn Self.GetOrbCircle(Box).RandomPoint();
+  WriteLn Self.GetOrbCircle(Box);
+
+  //Target.MouseMove(Self.GetOrbCircle(Box).RandomPoint());
+ // Target.MouseClick(EMouseButton.Left);
+end;
+
+function TRSMinimapInterface.GetSpecialAttack: Integer;
+begin
+  Result := Self.ReadOrb(Self.GetSpecBox());
+end;
+
+function TRSMinimapInterface.UseSpecialAttack(SpecNeeded: Integer): Boolean;
+begin
+  //if Self.GetSpecialAttack() >= SpecNeeded then
+
+end;
+
+function TRSMinimapInterface.GetMask: TImage;
+begin
+  if (RSClient.ClientMode() = ERSClientMode.FIXED) then
+    Result := Self.ImgMaskFixed
+  else
+    Result := Self.ImgMaskResizable;
+end;
+
+function TRSMinimapInterface.GetDots(Dots: EMinimapDots): TPointArray; overload;
+var
+  Dot: EMinimapDot;
+  Img: TImage;
+begin
+  Target.FreezeImage(Self.Bounds());
+  for Dot in Dots do
+  begin
+    case Dot of
+      EMinimapDot.NPC:    Img := Self.ImgDotNPC;
+      EMinimapDot.PLAYER: Img := Self.ImgDotPlayer;
+    end;
+
+    Result += Target.FindImageEx(Img, 0);
+  end;
+  Target.UnFreezeImage();
+end;
+
+function TRSMinimapInterface.GetDots(Dot: EMinimapDot): TPointArray; overload;
+begin
+  Result := Self.GetDots([Dot]);
+end;
+
+type
+  TRSCompassDials = record
+    N, S, E, W: TPoint;
+  end;
+
+function TRSMinimapInterface.FindCompassDials: TRSCompassDials;
+
+  function FindDialColor(Color: TColor; Tol: Single): TPointArray;
+  var
+    B: TBox;
+  begin
+    B := Self.GetCompassBox();
+
+    Result := Target.FindColor(Color, Tol, Self.GetCompassBox());
+    Result := Result.ExtractDist(B.Center, 0, 15);
+  end;
+
+var
+  ATPA: T2DPointArray;
+  TPA: TPointArray;
+  North: TPointArray;
+begin
+  // find red on compass
+  TPA := FindDialColor(920735, 18);
+  ATPA := TPA.Split(5);
+
+  if (Length(ATPA) <> 4) then
+  begin
+    WriteLn('GetCompassAngle: Red dials not found');
+    Exit;
+  end;
+
+  // remove center red arrow (always the biggest)
+  ATPA := ATPA.SortBySize(False);
+  ATPA.Delete(0);
+
+  // find north (brown) dial
+  North := FindDialColor(1911089, 5);
+  if (Length(North) = 0) then
+  begin
+    WriteLn('GetCompassAngle: North dial not found');
+    Exit;
+  end;
+
+  // South dial is always furthest from north dial
+  TPA := ATPA.Means();
+  TPA := TPA.SortFrom(North.Mean);
+
+  Result.N := North.Mean;
+  Result.S := TPA.Pop;
+
+  // figure out what is east/west dials
+  Result.E := TPA[0];
+  Result.W := TPA[1];
+
+  if (Result.N.AngleBetween(Result.S) >= 180) then
+  begin
+    if (Result.E.Y > Result.W.Y) then
+      Swap(Result.E, Result.W);
+  end else
+  begin
+    if (Result.W.Y > Result.E.Y) then
+      Swap(Result.E, Result.W);
+  end;
+end;
+
+function TRSMinimapInterface.GetCompassDeg: Double;
+const
+  FLOOR_FIX = Double(1.90794945778564); // RadToDeg(0.0333); // compass dial is floored.. this makes us more accurate.
+var
+  Angles: TDoubleArray;
+
+  procedure AddAngle(Angle: Double);
+  begin
+    Angle := DegNormalize(Angle);
+    if (Angle > 0) then
+      Angles += Angle + FLOOR_FIX
+    else
+      Angles += Angle;
+  end;
+
+var
+  TPA: TPointArray;
+  I: Integer;
+  Dials: TRSCompassDials;
+begin
+  // Find center dial
+  with Self.GetCompassBox().Center do
+    TPA := Target.FindColor(15857142, 10, TBox.Create(X-3, Y-3, X+3, Y+3));
+
+  if (Length(TPA) = 0) then
+  begin
+    WriteLn('GetCompassAngle: Center not found');
+    Exit;
+  end;
+
+  // Use mean of angles to center to east,west,south marker (red dots)
+  Dials := Self.FindCompassDials();
+  for I := 0 to High(TPA) do
+  begin
+    AddAngle(TPA[I].AngleBetween(Dials.S) - 360);
+    AddAngle(TPA[I].AngleBetween(Dials.E) - 270);
+    AddAngle(TPA[I].AngleBetween(Dials.W) - 90);
+  end;
+
+  Result := Angles.Mean;
+end;
+
+function TRSMinimapInterface.IsPointOn(P: TPoint; SizeMod: Double = 0): Boolean;
+var
+  B: TBox;
+  Mask: TImage;
+begin
+  B := Self.Bounds();
+
+  if (P in B) then
+  begin
+    P.X -= B.X1;
+    P.Y -= B.Y1;
+
+    Mask := Self.GetMask();
+    if (SizeMod = 0) then
+      Result := Mask.Pixel[P.X, P.Y] = Colors.WHITE
+    else
+      Result := not Mask.Target.FindColor(Colors.BLACK, 0).IsPointNearby(P, 0, SizeMod);
+  end;
+end;
+
+function TRSMinimapInterface.FilterPoints(Points: TPointArray): TPointArray;
+var
+  Mask: TPointArray;
+begin
+  Mask := Self.GetMask.Target.FindColor(Colors.WHITE, 0).Offset(Self.Bounds.TopLeft);
+  Result := Points.Intersection(Mask);
+end;
+
+function TRSMinimapInterface.CountColorMasked(Color: TColor; Tolerance: Single = 0): Integer; overload;
+begin
+  Result := Length(Self.FilterPoints(Target.FindColor(Color, Tolerance, Self.Bounds)));
+end;
+
+function TRSMinimapInterface.CountColorMasked(Color: TColorTolerance): Integer; overload;
+begin
+  Result := Length(Self.FilterPoints(Target.FindColor(Color, Self.Bounds)));
+end;
+
+
+var
+  Minimap: TRSMinimapInterface;
