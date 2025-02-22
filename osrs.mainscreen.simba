@@ -3,11 +3,25 @@
 
 type
   TRSMainScreen = record
+    Bounds: TBox;
     UptextFilter: TOCRFilter;
   end;
 
 procedure TRSMainScreen.Setup;
 begin
+  case RSClient.ClientMode() of
+    ERSClientMode.FIXED:
+      begin
+        Self.Bounds := TBox.Create(4,4,515,337);
+      end;
+
+    ERSClientMode.RESIZABLE_CLASSIC,
+    ERSClientMode.RESIZABLE_MODERN:
+      begin
+        Self.Bounds := Target.Bounds;
+      end;
+  end;
+
   Self.UptextFilter := TOCRAnyColorFilter.Create(85, 60);
   Self.UptextFilter.Blacklist := ',.'+#39+#34;
 end;
@@ -43,7 +57,3 @@ end;
 
 var
   MainScreen: TRSMainScreen;
-
-begin
-  MainScreen.Setup();
-end;

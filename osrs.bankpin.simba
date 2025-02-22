@@ -15,24 +15,19 @@ type
     const ELEMENT_BOX_8:    TRSInterfaceElement = [21, 227, 63, 63, False];
     const ELEMENT_BOX_9:    TRSInterfaceElement = [115, 227, 63, 63, False];
     const ELEMENT_BOX_10:   TRSInterfaceElement = [209, 227, 63, 63, False];
-  end;
 
-function TRSBankPinInterface.Bounds: TBox;
-begin
-  Result := InterfaceUtils.BoundsFromCenter(488, 305);
-  Result.Y1 += 5;
-  Result.Y2 += 5;
-end;
+    Bounds: TBox;
+  end;
 
 function TRSBankPinInterface.GetProgress: Integer;
 begin
-  Result := InterfaceUtils.ElementReadText(Self.ELEMENT_PROGRESS, Self.Bounds(), $00FFFF, FONT_QUILL_8).Count('*');
+  Result := InterfaceUtils.ElementReadText(Self.ELEMENT_PROGRESS, Self.Bounds, $00FFFF, FONT_QUILL_8).Count('*');
 end;
 
 function TRSBankPinInterface.IsOpen: Boolean;
 begin
-  Result := InterfaceUtils.ElementHasText(Self.ELEMENT_EXIT, Self.Bounds(), 'Exit', Colors.RED, FONT_QUILL_8) or
-            InterfaceUtils.ElementHasText(Self.ELEMENT_EXIT, Self.Bounds(), 'Exit', Colors.WHITE, FONT_QUILL_8);
+  Result := InterfaceUtils.ElementHasText(Self.ELEMENT_EXIT, Self.Bounds, 'Exit', Colors.RED, FONT_QUILL_8) or
+            InterfaceUtils.ElementHasText(Self.ELEMENT_EXIT, Self.Bounds, 'Exit', Colors.WHITE, FONT_QUILL_8);
 end;
 
 function TRSBankPinInterface.ClickDigit(Digit: Integer): Boolean;
@@ -45,12 +40,19 @@ var
   Element: TRSInterfaceElement;
 begin
   for Element in Elements do
-    if InterfaceUtils.ElementHasText(Element, Self.Bounds(), ToStr(Digit), $007FFF, FONT_BOLD_12) then
+    if InterfaceUtils.ElementHasText(Element, Self.Bounds, ToStr(Digit), $007FFF, FONT_BOLD_12) then
     begin
-      InterfaceUtils.ElementClick(Element, Self.Bounds());
+      InterfaceUtils.ElementClick(Element, Self.Bounds);
 
       Exit(True);
     end;
+end;
+
+procedure TRSBankPinInterface.Setup;
+begin
+  Self.Bounds := InterfaceUtils.BoundsFromCenter(488, 305);
+  Self.Bounds.Y1 += 5;
+  Self.Bounds.Y2 += 5;
 end;
 
 var

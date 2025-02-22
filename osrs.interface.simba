@@ -16,7 +16,7 @@ begin
   B.Y1 += 10;
   B.X2 -= 70;
   B.Y2 := B.Y1 + 18;
-  B.Clip(Bounds);
+  B := B.Clip(Bounds);
 
   Result := OCR.Locate(B, Text, FONT_BOLD_12, TOCRInvertColorFilter.Create([3358536, 0], [5, 0])) >= MinMatch;
 end;
@@ -129,6 +129,51 @@ type
     Width, Height: Integer;
     FromBottom: Boolean;
   end;
+
+  TRSInterfaceElementPlacement = record
+    X, Y: Integer;
+    Width, Height: Integer;
+    FromBottom: Boolean;
+  end;
+
+  TRSInterfaceElementNew = record
+    Name: ShortString;
+    Placement: TRSInterfaceElementPlacement;
+    Bounds: TBox;
+  end;
+
+function TRSInterfaceElementNew.Create(InterfaceBounds: TBox; Name: String; Placement: TRSInterfaceElementPlacement): TRSInterfaceElementNew; static;
+begin
+  Result.Name := Name;
+  Result.Placement := Placement;
+
+  if Placement.FromBottom then
+  begin
+    Result.Bounds.X1 := InterfaceBounds.X1 + Placement.X;
+    Result.Bounds.X2 := Result.Bounds.X1 + Placement.Width;
+
+    Result.Bounds.Y1 := InterfaceBounds.Y2 - (Placement.Y + Placement.Height);
+    Result.Bounds.Y2 := InterfaceBounds.Y2 - Placement.Y;
+  end else
+  begin
+    Result.Bounds.X1 := InterfaceBounds.X1 + Placement.X;
+    Result.Bounds.Y1 := InterfaceBounds.Y1 + Placement.Y;
+
+    Result.Bounds.X2 := Result.Bounds.X1 + Placement.Width;
+    Result.Bounds.Y2 := Result.Bounds.Y1 + Placement.Height;
+  end;
+end;
+
+function TRSInterfaceElementNew.HasColor(Color: TColor; MinCount: Integer = 1): Boolean;
+begin
+  Result := Target.HasColor(Color, 0, MinCount, Self.Bounds);
+end;
+
+procedure TRSInterfaceElementNew.Click(Button: EMouseButton = EMouseButton.LEFT);
+begin
+  Target.MouseMove(Self.Bounds);
+  Target.MouseClick(Button);
+end;
 
 function TRSInterfaceUtils.ElementBounds(Element: TRSInterfaceElement; InterfaceBounds: TBox): TBox;
 begin

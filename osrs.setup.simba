@@ -1,0 +1,29 @@
+{$DEFINE INCLUDED_SETUP}
+{$include_once osrs.simba}
+
+procedure SetupInterfaces;
+begin
+  Login.Setup();
+  GameTabs.Setup();
+  Inventory.Setup();
+  Logout.Setup();
+  Options.Setup();
+  Minimap.Setup();
+  XPBar.Setup();
+  MainScreen.Setup();
+  Bank.Setup();
+  BankPin.Setup();
+  ChatTabs.Setup();
+  Chat.Setup();
+end;
+
+procedure SetupInterfaces_TargetResized(var Target: TTarget; Data: TTargetEventData);
+begin
+  SetupInterfaces();
+end;
+
+begin
+  Target.AddEvent(ETargetEvent.TARGET_RESIZE, @SetupInterfaces_TargetResized);
+
+  SetupInterfaces();
+end;

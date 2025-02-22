@@ -2,62 +2,69 @@
 {$include_once osrs.simba}
 
 type
-  TRSBankInterface = record
-    const ELEMENT_SWAP:         TRSInterfaceElement = [5, 6, 49, 21, True];
-    const ELEMENT_QUANTITY_X:   TRSInterfaceElement = [280, 6, 24, 21, True];
-    const ELEMENT_QUANTITY_ALL: TRSInterfaceElement = [305, 6, 24, 21, True];
-    const ELEMENT_QUANTITY_5:   TRSInterfaceElement = [230, 6, 24, 21, True];
-    const ELEMENT_QUANTITY_10:  TRSInterfaceElement = [255, 6, 24, 21, True];
-    const ELEMENT_QUANTITY_1:   TRSInterfaceElement = [205, 6, 24, 21, True];
-    const ELEMENT_NOTE:         TRSInterfaceElement = [155, 6, 49, 21, True];
-    const ELEMENT_ITEM:         TRSInterfaceElement = [105, 6, 49, 21, True];
-    const ELEMENT_INSERT:       TRSInterfaceElement = [55, 6, 49, 21, True];
-    const ELEMENT_CLOSE:        TRSInterfaceElement = [460, 7, 20, 20, False];
+  TRSBank = record
+    ElementSwap: TRSInterfaceElementNew;
+    ElementQuantityX: TRSInterfaceElementNew;
+    ElementQuantityAll: TRSInterfaceElementNew;
+    ElementQuantity5: TRSInterfaceElementNew;
+    ElementQuantity10: TRSInterfaceElementNew;
+    ElementQuantity1: TRSInterfaceElementNew;
+    ElementWithdrawItem: TRSInterfaceElementNew;
+    ElementInsert: TRSInterfaceElementNew;
+    ElementWithdrawNote: TRSInterfaceElementNew;
+    ElementPlaceholder: TRSInterfaceElementNew;
+    ElementSearch: TRSInterfaceElementNew;
+    ElementDepositInventory: TRSInterfaceElementNew;
+    ElementDepositWorn: TRSInterfaceElementNew;
+
+    Bounds: TBox;
+    ItemArea: TBox;
   end;
 
-function TRSBankInterface.Bounds: TBox;
+function TRSBank.IsTitle(Text: String): Boolean;
 begin
-  Result := InterfaceUtils.BoundsFromCenter(488, 800);
+  Result := InterfaceUtils.IsTitle(Self.Bounds, Text);
 end;
 
-function TRSBankInterface.IsTitle(Text: String): Boolean;
-begin
-  Result := InterfaceUtils.IsTitle(Self.Bounds(), Text);
-end;
-
-function TRSBankInterface.IsOpen: Boolean;
+function TRSBank.IsOpen: Boolean;
 begin
   Result := Self.IsTitle('Bank') or Self.IsTitle('Tab') or Self.IsTitle('Showing') or Self.IsTitle('Equip');
 end;
 
-function TRSBankInterface.GetItemArea: TBox;
+function TRSBank.FindItemBoxes: TBoxArray;
+var
+  Color: TColor;
+  TPA: TPointArray;
+  B: TBox;
 begin
-  Result := Self.Bounds();
-  Result.X1 += 57;
-  Result.Y1 += 77;
-  Result.X2 -= 62;
-  Result.Y2 -= 43;
+  // Start with border with some tolerance (for placeholders)
+  TPA := Target.FindColor(Color, 12.5, Self.ItemArea);
+  for Color in [RSColors.ITEM_TEXT_YELLOW, RSColors.ITEM_TEXT_WHITE, RSColors.ITEM_TEXT_GREEN] do
+    TPA += Target.FindColor(Color, 0, Self.ItemArea);
+
+  for TPA in TPA.Cluster(Self.ItemArea.Width, 3) do
+  begin
+    B := TPA.Bounds;
+    if (B.Height <= 5) or (B.Y1 + 32 > Self.ItemArea.Y2) then
+      Continue;
+
+    Result += TBoxArray.Create([Self.ItemArea.X1, B.Y1 - 1], 8, 1, 32, 32, [16, 0]);
+  end;
 end;
 
-function TRSBankInterface.GetItemBoxes: TBoxArray;
-begin
-  with Self.GetItemArea() do
-    Result := TBoxArray.Create([X1, Y1], 8, Height div 35, 35, 31, [13, 5]);
-end;
-
-function TRSBankInterface.FindItem(ItemName: String; out ItemBox: TBox): Boolean;
+function TRSBank.FindItem(ItemName: String; out ItemBox: TBox): Boolean;
 var
   Boxes: TBoxArray;
   Arr: TIntegerArray;
 begin
-  //Boxes := Self.GetItemBoxes();
-  //Arr := InterfaceUtils.ItemFind(ItemName, Boxes, 1);
-  //Result := Length(Arr) = 1;
-  //if Result then
-  //  ItemBox := Boxes[Arr[0]];
+  Boxes := Self.FindItemBoxes();
+  Arr := InterfaceUtils.ItemFind(ItemName, Boxes, 1);
+  Result := Length(Arr) = 1;
+  if Result then
+    ItemBox := Boxes[Arr[0]];
 end;
 
-function TRSBankInterface.MouseItem(ItemName: String): Boolean;
+function TRSBank.MouseItem(ItemName: String): Boolean;
 var
   ItemBox: TBox;
 begin
@@ -66,14 +73,14 @@ begin
     Target.MouseMove(ItemBox);
 end;
 
-function TRSBankInterface.ClickItem(ItemName: String; Button: EMouseButton): Boolean;
+function TRSBank.ClickItem(ItemName: String; Button: EMouseButton): Boolean;
 begin
   Result := Self.MouseItem(ItemName);
   if Result then
     Target.MouseClick(Button);
 end;
 
-function TRSBankInterface.CountItemStack(ItemName: String): Integer;
+function TRSBank.CountItemStack(ItemName: String): Integer;
 var
   ItemBox: TBox;
 begin
@@ -81,12 +88,37 @@ begin
     Result := CountItemStack(ItemBox);
 end;
 
-function TRSBankInterface.HasItem(ItemName: String): Boolean;
+function TRSBank.HasItem(ItemName: String): Boolean;
 var
   ItemBox: TBox;
 begin
   Result := Self.FindItem(ItemName, ItemBox);
 end;
 
+procedure TRSBank.Setup;
+begin
+  Self.Bounds := InterfaceUtils.BoundsFromCenter(488, 800);
+
+  Self.ItemArea := Self.Bounds;
+  Self.ItemArea.X1 += 57;
+  Self.ItemArea.Y1 += 77;
+  Self.ItemArea.X2 -= 62;
+  Self.ItemArea.Y2 -= 43;
+
+  Self.ElementSwap             := TRSInterfaceElementNew.Create(Self.Bounds, 'ElementSwap', [5, 5, 49, 21, True]);
+  Self.ElementQuantityX        := TRSInterfaceElementNew.Create(Self.Bounds, 'ElementQuantityX', [281, 6, 23, 20, True]);
+  Self.ElementQuantityAll      := TRSInterfaceElementNew.Create(Self.Bounds, 'ElementQuantityAll', [305, 6, 24, 20, True]);
+  Self.ElementQuantity5        := TRSInterfaceElementNew.Create(Self.Bounds, 'ElementQuantity5', [230, 6, 24, 20, True]);
+  Self.ElementQuantity10       := TRSInterfaceElementNew.Create(Self.Bounds, 'ElementQuantity10', [255, 6, 24, 20, True]);
+  Self.ElementQuantity1        := TRSInterfaceElementNew.Create(Self.Bounds, 'ElementQuantity1', [205, 5, 24, 21, True]);
+  Self.ElementWithdrawItem     := TRSInterfaceElementNew.Create(Self.Bounds, 'ElementWithdrawItem', [105, 5, 49, 21, True]);
+  Self.ElementInsert           := TRSInterfaceElementNew.Create(Self.Bounds, 'ElementInsert', [55, 5, 49, 21, True]);
+  Self.ElementWithdrawNote     := TRSInterfaceElementNew.Create(Self.Bounds, 'ElementWithdrawNote', [155, 5, 49, 21, True]);
+  Self.ElementPlaceholder      := TRSInterfaceElementNew.Create(Self.Bounds, 'ElementPlaceholder', [331, 758, 35, 35, False]);
+  Self.ElementSearch           := TRSInterfaceElementNew.Create(Self.Bounds, 'ElementSearch', [370, 758, 35, 35, False]);
+  Self.ElementDepositInventory := TRSInterfaceElementNew.Create(Self.Bounds, 'ElementDepositInventory', [409, 758, 35, 35, False]);
+  Self.ElementDepositWorn      := TRSInterfaceElementNew.Create(Self.Bounds, 'ElementDepositWorn', [446, 758, 35, 35, False]);
+end;
+
 var
-  Bank: TRSBankInterface;
+  Bank: TRSBank;

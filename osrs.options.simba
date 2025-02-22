@@ -2,83 +2,75 @@
 {$include_once osrs.simba}
 
 type
-  ERSOptionsTab = enum(UNKNOWN, CONTROLS, AUDIO, DISPLAY);
+  ERSOptionsSubTab = enum(UNKNOWN, CONTROLS, AUDIO, DISPLAY);
 
-  TRSOptions = record
-    const ELEMENT_TAB_DISPLAY:  TRSInterfaceElement = [132, 7, 53, 22, False];
-    const ELEMENT_TAB_CONTROLS: TRSInterfaceElement = [4, 7, 53, 22, False];
-    const ELEMENT_TAB_AUDIO:    TRSInterfaceElement = [68, 7, 53, 22, False];
-    const ELEMENT_BRIGHTNESS:   TRSInterfaceElement = [54, 73, 109, 7, False];
-    const ELEMENT_ZOOM:         TRSInterfaceElement = [66, 110, 96, 7, False];
+  TRSOptionsTab = record
+    ElementZoom: TRSInterfaceElementNew;
+    ElementControlTab: TRSInterfaceElementNew;
+    ElementAudioTab: TRSInterfaceElementNew;
+    ElementDisplayTab: TRSInterfaceElementNew;
+
+    Bounds: TBox;
   end;
 
-function TRSOptions.Bounds: TBox;
-begin
-  Result := Gametabs.GetTabBox();
-end;
-
-function TRSOptions.IsOpen: Boolean;
+function TRSOptionsTab.IsOpen: Boolean;
 begin
   Result := GameTabs.IsCurrentTab(ERSGameTab.OPTIONS);
 end;
 
-function TRSOptions.Open: Boolean;
+function TRSOptionsTab.Open: Boolean;
 begin
   Result := GameTabs.Open(ERSGameTab.OPTIONS);
 end;
 
-function TRSOptions.GetZoom: Integer;
+function TRSOptionsTab.GetZoom: Integer;
 const
   COLOR_SLIDER_BORDER := ColorTolerance($131515, 4.585, EColorSpace.HSL, [0.040, 1.601, 1.361]);
 var
   SliderBounds: TBox;
   SliderX: Integer;
 begin
-  if Self.OpenTab(ERSOptionsTab.DISPLAY) then
+  if Self.OpenTab(ERSOptionsSubTab.DISPLAY) then
   begin
-    SliderBounds := InterfaceUtils.ElementBounds(Self.ELEMENT_ZOOM, Self.Bounds());
-    SliderX := Target.FindColor(COLOR_SLIDER_BORDER, SliderBounds).Bounds.X2;
+    SliderX := Target.FindColor(COLOR_SLIDER_BORDER, Self.ElementZoom.Bounds).Bounds.X2;
     if (SliderX > 0) then
-      Result := Round(((SliderX - SliderBounds.X1) / (SliderBounds.Width - 1)) * 100);
+      Result := Round(((SliderX - Self.ElementZoom.Bounds.X1) / (Self.ElementZoom.Bounds.Width - 1)) * 100);
   end;
 end;
 
-function TRSOptions.GetTabBoxes: TBoxArray;
-begin
-  Result := TBoxArray.Create(Self.Bounds.TopLeft.Offset(6,5), 3, 1, 49, 24, [15]);
-end;
-
-function TRSOptions.GetCurrentTab: ERSOptionsTab;
-var
-  Boxes: TBoxArray;
-  I: Integer;
+function TRSOptionsTab.GetCurrentTab: ERSOptionsSubTab;
 begin
   if Self.Open() then
   begin
-    Boxes := Self.GetTabBoxes();
-    for I := 0 to High(Boxes) do
-      if (Target.CountColor($48585D, 0, Boxes[I]) = 0) then // bottom line of tab
-        Exit(ERSOptionsTab(I+1));
+    if Self.ElementControlTab.HasColor($29353E) then Exit(ERSOptionsSubTab.CONTROLS);
+    if Self.ElementAudioTab.HasColor($29353E)   then Exit(ERSOptionsSubTab.AUDIO);
+    if Self.ElementDisplayTab.HasColor($29353E) then Exit(ERSOptionsSubTab.DISPLAY);
   end;
 end;
 
-function TRSOptions.OpenTab(Tab: ERSOptionsTab): Boolean;
-var
-  Box: TBox;
+function TRSOptionsTab.OpenTab(Tab: ERSOptionsSubTab): Boolean;
 begin
   if (Self.GetCurrentTab() = Tab) then
     Exit(True);
 
-  Box := Self.GetTabBoxes()[Integer(Tab) - 1];
-
-  for 1 to 3 do
-  begin
-    Target.MouseMove(Box);
-    Target.MouseClick(EMouseButton.LEFT);
-    if SleepUntil(Self.GetCurrentTab() = Tab, RandomLeft(100, 1000), 3000) then
-      Exit(True);
+  case Tab of
+    ERSOptionsSubTab.CONTROLS: Self.ElementControlTab.Click();
+    ERSOptionsSubTab.AUDIO:    Self.ElementAudioTab.Click();
+    ERSOptionsSubTab.DISPLAY:  Self.ElementDisplayTab.Click();
   end;
+
+  Result := SleepUntil(Self.GetCurrentTab() = Tab, RandomLeft(100, 1000), 3000);
+end;
+
+procedure TRSOptionsTab.Setup;
+begin
+  Self.Bounds := GameTabs.TabBounds;
+
+  Self.ElementZoom       := TRSInterfaceElementNew.Create(Self.Bounds, 'ElementZoom', [66, 110, 96, 7, False]);
+  Self.ElementControlTab := TRSInterfaceElementNew.Create(Self.Bounds, 'ElementControlTab', [2, 8, 57, 21, False]);
+  Self.ElementAudioTab   := TRSInterfaceElementNew.Create(Self.Bounds, 'ElementAudioTab', [66, 8, 57, 21, False]);
+  Self.ElementDisplayTab := TRSInterfaceElementNew.Create(Self.Bounds, 'ElementDisplayTab', [130, 8, 57, 21, False]);
 end;
 
 var
-  Options: TRSOptions;
+  Options: TRSOptionsTab;

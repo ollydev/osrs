@@ -16,34 +16,29 @@ type
     const ELEMENT_EXISTING_USER: TRSInterfaceElement = [395, 275, 135, 32, False];
     const ELEMENT_RESPONSE:      TRSInterfaceElement = [210, 182, 343, 57, False];
 
+    Bounds: TBox;
+
     Players: array of TRSLoginPlayer;
     PlayerIndex: Integer;
   end;
 
-function TRSLoginInterface.Bounds: TBox;
-begin
-  Result.X1 := (Target.Width - 1) div 2 - (765 div 2);
-  Result.X2 := (Target.Width - 1) div 2 + (765 div 2);
-  Result.Y2 := 502;
-end;
-
 function TRSLoginInterface.GetLoginMessage: String;
 begin
-  Result := InterfaceUtils.ElementReadTextLines(Self.ELEMENT_RESPONSE, Self.Bounds(), $00FFFF, FONT_BOLD_12).Join(' ');
+  Result := InterfaceUtils.ElementReadTextLines(Self.ELEMENT_RESPONSE, Self.Bounds, $00FFFF, FONT_BOLD_12).Join(' ');
 end;
 
 function TRSLoginInterface.IsOpen: Boolean;
 begin
-  Result := InterfaceUtils.ElementHasText(Self.ELEMENT_WORLD, Self.Bounds(), 'World', Colors.WHITE, FONT_BOLD_12);
+  Result := InterfaceUtils.ElementHasText(Self.ELEMENT_WORLD, Self.Bounds, 'World', Colors.WHITE, FONT_BOLD_12);
 end;
 
 function TRSLoginInterface.EnterField(Element: TRSInterfaceElement; Details: String): Boolean;
 begin
-  if InterfaceUtils.ElementHasText(Element, Self.Bounds(), Details + ' ', $00FFFF, FONT_BOLD_12) then
+  if InterfaceUtils.ElementHasText(Element, Self.Bounds, Details + ' ', $00FFFF, FONT_BOLD_12) then
     Exit(True);
 
   // Move caret
-  while not SleepUntil(InterfaceUtils.ElementHasColor(Element, Self.Bounds(), $00FFFF, 15), 100, RandomLeft(800, 1600)) do
+  while not SleepUntil(InterfaceUtils.ElementHasColor(Element, Self.Bounds, $00FFFF, 15), 100, RandomLeft(800, 1600)) do
   begin
     if not Self.IsOpen() then
       Exit(False);
@@ -52,7 +47,7 @@ begin
   end;
 
   // Erase field
-  while InterfaceUtils.ElementHasColor(Element, Self.Bounds(), $FFFFFF) do
+  while InterfaceUtils.ElementHasColor(Element, Self.Bounds, $FFFFFF) do
   begin
     if not Self.IsOpen() then
       Exit(False);
@@ -82,6 +77,16 @@ end;
 procedure TRSLoginInterface.AddPlayer(User, Pass: String; Pin: String = '');
 begin
   Self.Players += [User, Pass, Pin];
+end;
+
+procedure TRSLoginInterface.Setup;
+begin
+  Self.Bounds := TBox.Create(
+    (Target.Width - 1) div 2 - (765 div 2),
+    0,
+    (Target.Width - 1) div 2 + (765 div 2),
+    502
+  );
 end;
 
 var

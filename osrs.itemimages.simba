@@ -125,7 +125,7 @@ procedure TRSItemImages.Setup(ZipFile, NamesFile: String);
     Arr := Value.Split(',');
     SetLength(Result, Length(Arr));
     for I := 0 to High(Arr) do
-      Result[I] := Arr[I].ToInteger();
+      Result[I] := Arr[I].ToInt();
   end;
 
 begin

@@ -2,50 +2,37 @@
 {$include_once osrs.simba}
 
 type
-  TRSInventoryInterface = record end;
+  TRSInventoryTab = record
+    Bounds: TBox;
+    Slots: TBoxArray;
+  end;
 
-function TRSInventoryInterface.Bounds: TBox;
-begin
-  Result := GameTabs.GetTabBox();
-end;
-
-function TRSInventoryInterface.IsOpen: Boolean;
+function TRSInventoryTab.IsOpen: Boolean;
 begin
   Result := GameTabs.IsCurrentTab(ERSGameTab.INVENTORY);
 end;
 
-function TRSInventoryInterface.Open: Boolean;
+function TRSInventoryTab.Open: Boolean;
 begin
   Result := Self.IsOpen() or GameTabs.Open(ERSGameTab.INVENTORY);
 end;
 
-function TRSInventoryInterface.GetSlotBoxes: TBoxArray;
+function TRSInventoryTab.MouseSlot(Index: Integer): Boolean;
 begin
-  with Self.Bounds() do
-    Result := TBoxArray.Create([X1 + 16, Y1 + 9], 4, 7, 35, 31, [7, 5]);
+  Target.MouseMove(Self.Slots[Index]);
 end;
 
-function TRSInventoryInterface.GetSlotBox(Index: Integer): TBox;
-begin
-  Result := Self.GetSlotBoxes()[Index];
-end;
-
-function TRSInventoryInterface.MouseSlot(Index: Integer): Boolean;
-begin
-  Target.MouseMove(Self.GetSlotBoxes[Index]);
-end;
-
-function TRSInventoryInterface.IsSlotSelected(Index: Integer): Boolean;
+function TRSInventoryTab.IsSlotSelected(Index: Integer): Boolean;
 var
   B: TBox;
 begin
-  B := Self.GetSlotBox(Index);
+  B := Self.Slots[Index];
   B.Y1 += 8; // Skip (possible) item text
 
   Result := IsItemSelected(B);
 end;
 
-function TRSInventoryInterface.GetSelectedSlot: Integer;
+function TRSInventoryTab.GetSelectedSlot: Integer;
 begin
   for Result := 0 to 27 do
     if Self.IsSlotSelected(Result) then
@@ -54,30 +41,28 @@ begin
   Result := -1;
 end;
 
-function TRSInventoryInterface.IsEmpty: Boolean;
+function TRSInventoryTab.IsEmpty: Boolean;
 begin
-  Result := not IsItemIn(Self.Bounds());
+  Result := not IsItemIn(Self.Bounds);
 end;
 
-function TRSInventoryInterface.IsFull: Boolean;
+function TRSInventoryTab.IsFull: Boolean;
 begin
   Result := Length(Self.GetUsedSlots()) = 28;
 end;
 
-function TRSInventoryInterface.GetUsedSlots: TIntegerArray;
+function TRSInventoryTab.GetUsedSlots: TIntegerArray;
 var
   TPA: TPointArray;
   ATPA: T2DPointArray;
   I, Count: Integer;
-  SlotBoxes: TBoxArray;
 begin
-  SlotBoxes := Self.GetSlotBoxes();
-  TPA := FindItemBorder(SlotBoxes.Merge()) + SlotBoxes.Centers();
-  if (Length(TPA) <= Length(SlotBoxes)) then
+  TPA := FindItemBorder(Self.Slots.Merge()) + Self.Slots.Centers();
+  if (Length(TPA) <= Length(Self.Slots)) then
     Exit;
-  ATPA := TPA.PartitionEx([SlotBoxes[0].X1, SlotBoxes[0].Y1], 40, 36);
+  ATPA := TPA.PartitionEx([Self.Slots[0].X1, Self.Slots[0].Y1], 40, 36);
 
-  SetLength(Result, Length(SlotBoxes));
+  SetLength(Result, Length(Self.Slots));
   for I := 0 to High(ATPA) do
     if (Length(ATPA[I]) > 1) then
     begin
@@ -87,39 +72,39 @@ begin
   SetLength(Result, Count);
 end;
 
-function TRSInventoryInterface.CountUsedSlots: Integer;
+function TRSInventoryTab.CountUsedSlots: Integer;
 begin
   Result := Length(Self.GetUsedSlots());
 end;
 
-function TRSInventoryInterface.FindItems(ItemName: String): TIntegerArray;
+function TRSInventoryTab.FindItems(ItemName: String): TIntegerArray;
 begin
   if not Self.Open() then
     Exit;
 
-  Result := InterfaceUtils.ItemFind(ItemName, Self.GetSlotBoxes());
+  Result := InterfaceUtils.ItemFind(ItemName, Self.Slots);
 end;
 
-function TRSInventoryInterface.FindAllItems(ItemNames: TStringArray): TIntegerArray;
+function TRSInventoryTab.FindAllItems(ItemNames: TStringArray): TIntegerArray;
 begin
   if not Self.Open() then
     Exit;
 
-  Result := InterfaceUtils.ItemFind(ItemNames, Self.GetSlotBoxes());
+  Result := InterfaceUtils.ItemFind(ItemNames, Self.Slots);
 end;
 
-function TRSInventoryInterface.FindItem(ItemName: String): Integer;
+function TRSInventoryTab.FindItem(ItemName: String): Integer;
 var
   Arr: TIntegerArray;
 begin
-  Arr := InterfaceUtils.ItemFind(ItemName, Self.GetSlotBoxes(), 1);
+  Arr := InterfaceUtils.ItemFind(ItemName, Self.Slots, 1);
   if Length(Arr) then
     Result := Arr[0]
   else
     Result := -1;
 end;
 
-function TRSInventoryInterface.MouseItem(ItemName: String): Boolean;
+function TRSInventoryTab.MouseItem(ItemName: String): Boolean;
 var
   Index: Integer;
 begin
@@ -130,47 +115,47 @@ begin
     Self.MouseSlot(Index);
 end;
 
-function TRSInventoryInterface.ClickItem(ItemName: String; Button: EMouseButton): Boolean;
+function TRSInventoryTab.ClickItem(ItemName: String; Button: EMouseButton): Boolean;
 begin
   if not Self.Open() then
     Exit;
 
-  Result := InterfaceUtils.ItemClick(ItemName, Self.GetSlotBoxes(), Button);
+  Result := InterfaceUtils.ItemClick(ItemName, Self.Slots, Button);
 end;
 
-function TRSInventoryInterface.ClickAnyItem(ItemNames: TStringArray; Button: EMouseButton): Boolean;
+function TRSInventoryTab.ClickAnyItem(ItemNames: TStringArray; Button: EMouseButton): Boolean;
 begin
   if not Self.Open() then
     Exit;
 
-  Result := InterfaceUtils.ItemClickAny(ItemNames, Self.GetSlotBoxes(), Button);
+  Result := InterfaceUtils.ItemClickAny(ItemNames, Self.Slots, Button);
 end;
 
-function TRSInventoryInterface.CountItem(ItemName: String): Integer;
+function TRSInventoryTab.CountItem(ItemName: String): Integer;
 begin
   Result := Length(Self.FindItems(ItemName));
 end;
 
-function TRSInventoryInterface.CountAllItems(ItemNames: TStringArray): Integer;
+function TRSInventoryTab.CountAllItems(ItemNames: TStringArray): Integer;
 begin
   Result := Length(Self.FindAllItems(ItemNames));
 end;
 
-function TRSInventoryInterface.CountItemStack(ItemName: String): Integer;
+function TRSInventoryTab.CountItemStack(ItemName: String): Integer;
 var
   Index: Integer;
 begin
   Index := Self.FindItem(ItemName);
   if (Index > -1) then
-    Result := CountItemStack(Self.GetSlotBox(Index));
+    Result := CountItemStack(Self.Slots[Index]);
 end;
 
-function TRSInventoryInterface.HasItem(ItemName: String): Boolean;
+function TRSInventoryTab.HasItem(ItemName: String): Boolean;
 begin
   Result := Self.FindItem(ItemName) > -1;
 end;
 
-function TRSInventoryInterface.HasAnyItems(ItemNames: TStringArray): Boolean;
+function TRSInventoryTab.HasAnyItems(ItemNames: TStringArray): Boolean;
 var
   ItemName: String;
 begin
@@ -179,5 +164,11 @@ begin
       Exit(True);
 end;
 
+procedure TRSInventoryTab.Setup;
+begin
+  Self.Bounds := GameTabs.TabBounds;
+  Self.Slots := TBoxArray.Create([Self.Bounds.X1 + 16, Self.Bounds.Y1 + 9], 4, 7, 35, 31, [7, 5]);
+end;
+
 var
-  Inventory: TRSInventoryInterface;
+  Inventory: TRSInventoryTab;

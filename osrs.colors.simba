@@ -22,10 +22,10 @@ end;
 
 function IsItemIn(Area: TBox): Boolean;
 begin
-  Result := (Target.CountColor(RSColors.ITEM_BORDER, 8.5, Area) > 0) or (Target.CountColor(RSColors.ITEM_BORDER_WHITE, 0, Area) > 0);
+  Result := Target.HasColor(RSColors.ITEM_BORDER, 8.5, 1, Area) or Target.HasColor(RSColors.ITEM_BORDER_WHITE, 0, 1, Area);
 end;
 
 function IsItemSelected(Area: TBox): Boolean;
 begin
-  Result := (Target.CountColor(RSColors.ITEM_BORDER_WHITE, 0, Area) > 0);
+  Result := Target.HasColor(RSColors.ITEM_BORDER_WHITE, 0, 1, Area);
 end;

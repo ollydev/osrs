@@ -8,6 +8,9 @@ type
     const XPBarSmall:  TImage = ImageFromString('IMG:AQAAAHcAAAAbAAAAAAAAAMDjPwEAAAAAwegIAAEAAAAQ5D8BAAAAAM0CAQABAAAA5Gk8CQAAAAAEEzgJAAAAANwBAADcAQAA5Gk8CQAAAAABAAAAdwAAABsAAAAgAAAAAAAAAAAAAAAAAAAAAwAAACAIEAgICAAIGAAAAAAAAAAAAAAAAAAAAAAAAAAAiVBORw0KGgoAAAANSUhEUgAAAHcAAAAbCAIAAADJbYf8AAAABnRSTlMAAAAAAABupgeRAAAAZ0lEQVR4nO3QMQ2AUBQEwe8FA5QYwAAl/oVAQoGCt9Vs7gzMOvbNprfe39dpc/uVl2aiXES5iHIR5SLKRZSLKBdRLqJcRLmIchHlIspFlIsoF1EuolxEuYhyEeUiykWUiygXUS76lB9cXvoRZ1RZ8wAAAABJRU5ErkJggg==');
     const XPBarMedium: TImage = ImageFromString('IMG:AQAAAIEAAAAbAAAAAAAAAMDjPwEAAAAAwegIAAEAAAAQ5D8BAAAAAM0CAQABAAAAnGs5CQAAAAA8ojkJAAAAAAQCAAAEAgAAnGs5CQAAAAABAAAAgQAAABsAAAAgAAAAAAAAAAAAAAAAAAAAAwAAACAIEAgICAAIGAAAAAAAAAAAAAAAAAAAAAAAAAAAiVBORw0KGgoAAAANSUhEUgAAAIEAAAAbCAIAAADUP3siAAAABnRSTlMAAAAAAABupgeRAAAAZklEQVR4nO3RMRGAQBAEwfOCAcI3gAFC/AuBqg+Q0MlM7SroWefR7Ob7c19N7TeYEmXgy8CXgS8DXwa+DHwZ+DLwZeDLwJeBLwNfBr4MfBn4MvBl4MvAl4EvA18Gvgx8Gfgy8G2DF1aSCPicHaTBAAAAAElFTkSuQmCC');
     const XPBarLarge:  TImage = ImageFromString('IMG:AQAAAIwAAAAbAAAAAAAAAMDjPwEAAAAAwegIAAEAAAAQ5D8BAAAAAM0CAQABAAAA4Bs4CQAAAAAgVzgJAAAAADACAAAwAgAA4Bs4CQAAAAABAAAAjAAAABsAAAAgAAAAAAAAAAAAAAAAAAAAAwAAACAIEAgICAAIGAAAAAAAAAAAAAAAAAAAAAAAAAAAiVBORw0KGgoAAAANSUhEUgAAAIwAAAAbCAIAAAAhwfCSAAAABnRSTlMAAAAAAABupgeRAAAAa0lEQVR4nO3RMQ2AUBQEwe8FA5QYwAAl/oVAQoGFt8ls7hTMOvbNhm+9v6/Txu5HWhoZpECQAkEKBCkQpECQAkEKBCkQpECQAkEKBCkQpECQAkEKBCkQpECQAkEKBCkQpECQAkEKBCnQh/QArBMZTB4wsSsAAAAASUVORK5CYII=');
+
+    BoundsCache: TBox;
+    Button: TCircle;
   end;
 
 function TRSXPBar.Bounds: TBox;
@@ -31,6 +34,9 @@ function TRSXPBar.Bounds: TBox;
 var
   Area: TBox;
 begin
+  if (Self.BoundsCache <> [0,0,0,0]) then
+    Exit(Self.BoundsCache);
+
   // Can only currently be at top of mainscreen in vanilla client
   Area := Target.Bounds;
   Area.Y2 := Area.Y1 + 100;
@@ -39,6 +45,8 @@ begin
      not Find(Self.XPBarMedium, Area, Result) and
      not Find(Self.XPBarLarge, Area, Result) then
     Exit;
+
+  Self.BoundsCache := Result;
 end;
 
 function TRSXPBar.Size: ERSXPBarSize;
@@ -62,6 +70,29 @@ begin
     ERSXPBarSize.MEDIUM: Result := OCR.RecognizeNumber(B, TOCRColorFilter.Create([Colors.WHITE]), FONT_PLAIN_12);
     ERSXPBarSize.LARGE:  Result := OCR.RecognizeNumber(B, TOCRColorFilter.Create([Colors.WHITE]), FONT_BOLD_12);
   end;
+end;
+
+procedure TRSXPBar.Setup;
+var
+  B: TBox;
+begin
+  case RSClient.ClientMode() of
+    ERSClientMode.FIXED:
+      begin
+        B := InterfaceUtils.BoundsFromTopRight([-249,21], 26, 26);
+      end;
+
+    ERSClientMode.RESIZABLE_CLASSIC,
+    ERSClientMode.RESIZABLE_MODERN:
+      begin
+        B := InterfaceUtils.BoundsFromTopRight([-211,27], 26, 26);
+      end;
+  end;
+
+  Self.BoundsCache := [];
+  Self.Button.X := B.Center.X;
+  Self.Button.Y := B.Center.Y;
+  Self.Button.Radius := 12;
 end;
 
 var

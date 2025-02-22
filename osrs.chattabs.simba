@@ -2,11 +2,13 @@
 {$include_once osrs.simba}
 
 type
-  TRSChatTabs = record end;
+  TRSChatTabs = record
+    Bounds: TBox;
+  end;
 
-function TRSChatTabs.Bounds: TBox;
+procedure TRSChatTabs.Setup;
 begin
-  Result := InterfaceUtils.BoundsFromBottomLeft([0, -23], 518, 21);
+  Self.Bounds := InterfaceUtils.BoundsFromBottomLeft([0, -23], 518, 21);
 end;
 
 var
