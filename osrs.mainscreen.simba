@@ -34,25 +34,26 @@ begin
     Result := OCR.RecognizeStatic([3, 3, 500, 21], Self.UptextFilter, FONT_BOLD_12_SHADOW);
 end;
 
-function TRSMainScreen.GetUpTextSimilarity(Target: String): Double;
+function TRSMainScreen.IsUpText(text: String; similarity: Single = 0.9): Boolean;
 var
-  Text: String;
+  upText: String;
 begin
-  Text := Self.GetUpText();
-  if ('/' in Text) then
-    Text := Text.Before('/');
-
-  Result := Text.Similarity(Target);
+  upText := Copy(Self.GetUpText(), 1, Length(text));
+  Result := text.Similarity(upText) >= similarity;
 end;
 
-function TRSMainScreen.IsUpText(Target: String; Similarity: Double): Boolean; overload;
+function TRSMainScreen.IsUpText(strings: TStringArray; similarity: Single = 0.9): Boolean; overload;
+var
+  upText, str, tmp: String;
 begin
-  Result := Self.GetUpTextSimilarity(Target) >= Similarity;
-end;
+  upText := Self.GetUpText();
 
-function TRSMainScreen.IsUpText(SubStrings: TStringArray): Boolean; overload;
-begin
-  Result := Self.GetUpText().ContainsAny(SubStrings, True);
+  for str in strings do
+  begin
+    tmp := Copy(upText, 1, Length(str));
+    if str.Similarity(tmp) >= similarity then
+      Exit(True);
+  end;
 end;
 
 var
