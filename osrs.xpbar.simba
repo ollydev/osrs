@@ -61,15 +61,18 @@ end;
 function TRSXPBar.Read: Int64;
 var
   B: TBox;
+  Text: String;
 begin
   B := Self.Bounds();
   B.X1 += 25;
 
   case Self.Size() of
-    ERSXPBarSize.SMALL:  Result := OCR.RecognizeNumber(B, TOCRColorFilter.Create([Colors.WHITE]), FONT_PLAIN_11);
-    ERSXPBarSize.MEDIUM: Result := OCR.RecognizeNumber(B, TOCRColorFilter.Create([Colors.WHITE]), FONT_PLAIN_12);
-    ERSXPBarSize.LARGE:  Result := OCR.RecognizeNumber(B, TOCRColorFilter.Create([Colors.WHITE]), FONT_BOLD_12);
+    ERSXPBarSize.SMALL:  Text := OCR.RecognizeStatic(B, FONT_PLAIN_11, [Colors.WHITE], 0);
+    ERSXPBarSize.MEDIUM: Text := OCR.RecognizeStatic(B, FONT_PLAIN_12, [Colors.WHITE], 0);
+    ERSXPBarSize.LARGE:  Text := OCR.RecognizeStatic(B, FONT_BOLD,     [Colors.WHITE], 0);
   end;
+
+  Result := Text.Replace(',', '').ToInt(-1);
 end;
 
 procedure TRSXPBar.Setup;

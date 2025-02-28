@@ -4,7 +4,8 @@
 type
   TRSMainScreen = record
     Bounds: TBox;
-    UptextFilter: TOCRFilter;
+    UptextBounds: TBox;
+    UptextOCR: TPixelOCR;
   end;
 
 procedure TRSMainScreen.Setup;
@@ -12,26 +13,30 @@ begin
   case RSClient.ClientMode() of
     ERSClientMode.FIXED:
       begin
-        Self.Bounds := TBox.Create(4,4,515,337);
+        Self.Bounds := [4,4, 515, 337];
+        Self.UptextBounds := [7, 7, 500, 25];
       end;
 
     ERSClientMode.RESIZABLE_CLASSIC,
     ERSClientMode.RESIZABLE_MODERN:
       begin
         Self.Bounds := Target.Bounds;
+        Self.UptextBounds := [3, 3, 500, 21];
       end;
   end;
 
-  Self.UptextFilter := TOCRAnyColorFilter.Create(85, 60);
-  Self.UptextFilter.Blacklist := ',.'+#39+#34;
+  Self.UptextOCR.Tolerance := 25;
+  Self.UptextOCR.ShadowTolerance := 65;
+  Self.UptextOCR.Whitelist := ['a'..'z', 'A'..'Z', '0'..'9', '-', '>', '(', ')', '/'];
 end;
 
 function TRSMainScreen.GetUpText: String;
+var
+  img: TImage;
 begin
-  if (RSClient.ClientMode = ERSClientMode.FIXED) then
-    Result := OCR.RecognizeStatic([7, 7, 500, 25], Self.UptextFilter, FONT_BOLD_12_SHADOW)
-  else
-    Result := OCR.RecognizeStatic([3, 3, 500, 21], Self.UptextFilter, FONT_BOLD_12_SHADOW);
+  img := TImage.CreateFromTarget(Self.UptextBounds);
+  Result := Self.UptextOCR.Recognize(img, FONT_BOLD_SHADOW, [0,0]);
+  img.Free();
 end;
 
 function TRSMainScreen.GetUpTextSimilarity(Target: String): Double;

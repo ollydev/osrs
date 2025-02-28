@@ -194,7 +194,6 @@ begin
     Self.Form.Caption := 'Interface Element Builder';
     Self.Form.Width := 1200;
     Self.Form.Height := 1000;
-    Self.Form.Font.Size := 10;
     Self.Form.OnClose := @Self.OnFormClose;
 
     Self.Menu := TLazMainMenu.Create(Self.Form);

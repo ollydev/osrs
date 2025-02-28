@@ -3,11 +3,9 @@
 
 type
   TRSLogoutTab = record
-    const ELEMENT_WS_WORLD:             TRSInterfaceElement = [20, 1, 145, 20, False];
-    const ELEMENT_WS_LOGOUT:            TRSInterfaceElement = [168, 236, 18, 22, False];
-    const ELEMENT_WS_CLOSE:             TRSInterfaceElement = [170, 3, 18, 18, False];
-    const ELEMENT_WORLDSWITCHER_BUTTON: TRSInterfaceElement = [28, 167, 133, 25, False];
-    const ELEMENT_LOGOUT_BUTTON:        TRSInterfaceElement = [28, 215, 133, 25, False];
+    ElementCurrentWorld: TRSInterfaceElement;
+    ElementLogout: TRSInterfaceElement;
+    ElementWorldSwitcher: TRSInterfaceElement;
 
     Bounds: TBox;
   end;
@@ -26,10 +24,10 @@ function TRSLogoutTab.GetCurrentWorld: Integer;
 begin
   if Self.IsOpen() then
   begin
-    while InterfaceUtils.ElementHasText(Self.ELEMENT_WS_WORLD, Self.Bounds, 'Loading', RSColors.TEXT_GREY, FONT_BOLD_12) do
-      Sleep(50);
-
-    Result := InterfaceUtils.ElementReadNumber(Self.ELEMENT_WS_WORLD, Self.Bounds, RSColors.TEXT_ORANGE, FONT_BOLD_12);
+    //while InterfaceUtils.ElementHasText(Self.ELEMENT_WS_WORLD, Self.Bounds, 'Loading', RSColors.TEXT_GREY, FONT_BOLD_12) do
+    //  Sleep(50);
+    //
+    //Result := InterfaceUtils.ElementReadNumber(Self.ELEMENT_WS_WORLD, Self.Bounds, RSColors.TEXT_ORANGE, FONT_BOLD_12);
   end;
 end;
 
@@ -43,7 +41,7 @@ begin
   if not Self.IsWorldSwitcherOpen() then
     Exit(True);
 
-  InterfaceUtils.ElementClick(Self.ELEMENT_WS_CLOSE, Self.Bounds);
+  //InterfaceUtils.ElementClick(Self.ELEMENT_WS_CLOSE, Self.Bounds);
 
   Result := SleepUntil(not Self.IsWorldSwitcherOpen(), RandomLeft(100, 1000), 3000);
 end;
@@ -59,7 +57,7 @@ begin
 
   for 1 to Attempts do
   begin
-    InterfaceUtils.ElementClick(Self.ELEMENT_LOGOUT_BUTTON, Self.Bounds);
+    //InterfaceUtils.ElementClick(Self.ELEMENT_LOGOUT_BUTTON, Self.Bounds);
     if RSClient.IsLoggedOut(Interval + Random(-1000, 1000)) then
       Exit(True);
   end;
@@ -68,6 +66,10 @@ end;
 procedure TRSLogoutTab.Setup;
 begin
   Self.Bounds := GameTabs.TabBounds;
+
+  Self.ElementCurrentWorld  := TRSInterfaceElement.Create(Self.Bounds, 'ElementCurrentWorld', [20, 2, 147, 18, False]);
+  Self.ElementLogout        := TRSInterfaceElement.Create(Self.Bounds, 'ElementLogout', [29, 216, 131, 23, False]);
+  Self.ElementWorldSwitcher := TRSInterfaceElement.Create(Self.Bounds, 'ElementWorldSwitcher', [29, 168, 131, 23, False]);
 end;
 
 var
