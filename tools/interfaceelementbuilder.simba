@@ -91,7 +91,7 @@ end;
 
 procedure TRSInterfaceBuilder.DoInterfaceMenuClick(Sender: TObject);
 
-  function StringToElement(Str: String): TRSInterfaceElementNew;
+  function StringToElement(Str: String): TRSInterfaceElement;
   begin
     Result.Name := Str.Between('NAME = ', ',');
 
@@ -116,7 +116,7 @@ procedure TRSInterfaceBuilder.DoInterfaceMenuClick(Sender: TObject);
 var
   I: Integer;
   Field: TRTTIField;
-  Element: TRSInterfaceElementNew;
+  Element: TRSInterfaceElement;
 begin
   for I := 0 to High(Interfaces) do
     if (Interfaces[I].Name = TLazMenuItem(Sender).Caption) then
@@ -127,7 +127,7 @@ begin
       Self.ShapeBox.BeginUpdate();
       Self.ShapeBox.Clear();
       for Field in Interfaces[i].Fields do
-        if (Field.VarType = 'TRSInterfaceElementNew') then
+        if (Field.VarType = 'TRSInterfaceElement') then
         begin
           Element := StringToElement(Field.Value);
 
@@ -147,12 +147,12 @@ var
   I, MaxLen: Integer;
   Shape: TShapeBoxShape;
   Padding, Str: String;
-  Element: TRSInterfaceElementNew;
+  Element: TRSInterfaceElement;
   Fields: String;
 begin
   for I := 0 to Self.ShapeBox.Count - 1 do
   begin
-    Fields += '    ' + Self.ShapeBox.Shape[I].Name + ': TRSInterfaceElementNew;' + LINE_SEP;
+    Fields += '    ' + Self.ShapeBox.Shape[I].Name + ': TRSInterfaceElement;' + LINE_SEP;
     if (Self.ShapeBox.Shape[I].Name.Length > MaxLen) then
       MaxLen := Self.ShapeBox.Shape[I].Name.Length;
   end;
@@ -175,7 +175,7 @@ begin
     Element.Placement.Width := Shape.Box.Width - 1;
     Element.Placement.Height := Shape.Box.Height - 1;
 
-    Str += "  Self.%s%s := TRSInterfaceElementNew.Create(Self.Bounds, '%s', [%d, %d, %d, %d, %s]);".Format([Shape.Name, Padding, Shape.Name, Element.Placement.X, Element.Placement.Y, Element.Placement.Width, Element.Placement.Height, ToString(Element.Placement.FromBottom)]) + LINE_SEP;
+    Str += "  Self.%s%s := TRSInterfaceElement.Create(Self.Bounds, '%s', [%d, %d, %d, %d, %s]);".Format([Shape.Name, Padding, Shape.Name, Element.Placement.X, Element.Placement.Y, Element.Placement.Width, Element.Placement.Height, ToString(Element.Placement.FromBottom)]) + LINE_SEP;
   end;
 
   WriteLn(Fields);
@@ -194,7 +194,6 @@ begin
     Self.Form.Caption := 'Interface Element Builder';
     Self.Form.Width := 1200;
     Self.Form.Height := 1000;
-    Self.Form.Font.Size := 10;
     Self.Form.OnClose := @Self.OnFormClose;
 
     Self.Menu := TLazMainMenu.Create(Self.Form);
@@ -208,7 +207,7 @@ begin
       Self.MenuItemDirectionDown.OnClick := @Self.DoOffsetDirectionClick;
     end;
 
-    Self.ShapeBox := TShapeBox.Create(Self.Form, SizeOf(TRSInterfaceElementNew));
+    Self.ShapeBox := TShapeBox.Create(Self.Form, SizeOf(TRSInterfaceElement));
     Self.ShapeBox.Parent := Self.Form;
     Self.ShapeBox.Align := ELazAlign.Client;
     Self.ShapeBox.OnImgPaint := @Self.DoPaintShapeBox;

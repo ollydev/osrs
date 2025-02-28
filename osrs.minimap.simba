@@ -7,7 +7,7 @@ type
 
   EMinimapOrb = enum(HP, PRAYER, RUN, SPECIAL);
 
-  TRSMinimapInterface = record
+  TRSMinimap = record
     const ImgDotPlayer:     TImage = ImageFromString('IMG:AQAAAAIAAAACAAAAAAAAAP21aQABAAAAIKprAAEAAADI5D8BAAAAAM0CAQABAAAA0ELlCAAAAACwQ+UIAAAAAAgAAAAIAAAA0ELlCAAAAAABAAAAAgAAAAIAAAAYAAAAAAAAAAAAAAAAAAAAAwAAABgIEAgICAAAAAEAAAIAAAAAAAAAAAAAAAAAAAAAiVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAEUlEQVR4nGP4BwYMQPzmzRsAUvoLs3htHuEAAAAASUVORK5CYII=');
     const ImgDotNPC:        TImage = ImageFromString('IMG:AQAAAAIAAAACAAAAAAAAAI22aQABAAAAsKprAAEAAAC45D8BAAAAAP0CAQABAAAA8HXQCwAAAADwdtALAAAAAAgAAAAIAAAA8HXQCwAAAAABAAAAAgAAAAIAAAAgAAAAAAAAAAAAAAAAAAAAAwAAACAIEAgICAAIGAEAAAIAAAAAAAAAAAAAAAAAAAAAiVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFUlEQVR4nGP484fp61cGBiD19i0DADpsB7kcRHcXAAAAAElFTkSuQmCC');
     const ImgDotItem:       TImage = ImageFromString('IMG:AQAAAAIAAAACAAAAAAAAAI22aQABAAAAsKprAAEAAAC45D8BAAAAAP0CAQABAAAA8HXQCwAAAAAwbtALAAAAAAgAAAAIAAAA8HXQCwAAAAABAAAAAgAAAAIAAAAgAAAAAAAAAAAAAAAAAAAAAwAAACAIEAgICAAIGAEAAAIAAAAAAAAAAAAAAAAAAAAAiVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFUlEQVR4nGP4p6Dwh42NAYg/MjAAACMDBECYtZu9AAAAAElFTkSuQmCC');
@@ -18,17 +18,23 @@ type
     Center: TPoint;
 
     CompassBounds: TBox;
+    CompassCenter: TPoint;
+    CompassCache: record
+      Dials: TPointArray;
+      Deg: Single;
+    end;
+
     OrbBounds: array[EMinimapOrb] of TBox;
   end;
 
-function TRSMinimapInterface.GetImage: TImage;
+function TRSMinimap.GetImage: TImage;
 begin
   Result := TImage.CreateFromTarget(Self.Bounds);
   //Result.DrawAlpha := 175;
   Result.DrawImage(Self.GetMask(), [0, 0]);
 end;
 
-function TRSMinimapInterface.ReadOrb(Orb: EMinimapOrb): Integer;
+function TRSMinimap.ReadOrb(Orb: EMinimapOrb): Integer;
 var
   B: TBox;
 begin
@@ -36,34 +42,34 @@ begin
   B.Y1 := B.Y1 + 10;
   B.X2 := B.X1 + 22;
 
-  Result := OCR.RecognizeNumber(B, TOCRShadowFilter.Create(), FONT_PLAIN_11);
+  Result := OCR.RecognizeShadow(B, FONT_PLAIN_11, 0).ToInt(-1);
 end;
 
-function TRSMinimapInterface.GetOrbCircle(Orb: EMinimapOrb): TCircle;
+function TRSMinimap.GetOrbCircle(Orb: EMinimapOrb): TCircle;
 begin
   with Self.OrbBounds[Orb] do
     Result := [X2 - 12, Y2 - 12, 13];
 end;
 
-procedure TRSMinimapInterface.ClickOrb(Orb: EMinimapOrb);
+procedure TRSMinimap.ClickOrb(Orb: EMinimapOrb);
 begin
   Target.MouseMove(Self.GetOrbCircle(Orb).RandomPointCenter());
   Target.MouseClick(EMouseButton.Left);
 end;
 
-function TRSMinimapInterface.GetSpecialAttack: Integer;
+function TRSMinimap.GetSpecialAttack: Integer;
 begin
   Result := Self.ReadOrb(EMinimapOrb.SPECIAL);
 end;
 
-function TRSMinimapInterface.UseSpecialAttack(SpecNeeded: Integer): Boolean;
+function TRSMinimap.UseSpecialAttack(SpecNeeded: Integer): Boolean;
 begin
   Result := Self.GetSpecialAttack() >= SpecNeeded;
   if Result then
     Self.ClickOrb(EMinimapOrb.SPECIAL);
 end;
 
-function TRSMinimapInterface.GetMask: TImage;
+function TRSMinimap.GetMask: TImage;
 begin
   if (RSClient.ClientMode() = ERSClientMode.FIXED) then
     Result := Self.ImgMaskFixed
@@ -71,7 +77,50 @@ begin
     Result := Self.ImgMaskResizable;
 end;
 
-function TRSMinimapInterface.GetDots(Dots: EMinimapDots): TPointArray; overload;
+function TRSMinimap.GetCompassAngle: Single;
+var
+  dials, northarr, westeastdials, southarr, westarr, eastarr: TPointArray;
+  north,south,west,east: TPoint;
+  n,w,e,s,x,y: Single;
+begin
+  dials := Target.FindColor(920735, 1, Self.CompassBounds);
+  dials := dials.ExtractDist(Self.CompassCenter, 10, 18);
+  if (dials.Equals(Self.CompassCache.Dials)) then
+    Exit(Self.CompassCache.Deg);
+  Self.CompassCache.Dials := dials;
+
+  northarr := Target.FindColor(1911089, 1, Self.CompassBounds);
+  north    := northarr.ExtractDist(Self.CompassCenter, 0, 18).Mean();
+
+  southarr := dials.ExtractDist(north, 20, 9999);
+  south    := southarr.FurthestPoint(Self.CompassCenter);
+
+  dials  := dials.ExcludePoints(southarr);
+  for dials in dials.Cluster(3) do
+    if CrossProduct(dials.Mean(), north, south) > 0 then
+      westarr := dials
+    else
+      eastarr := dials;
+
+  west := westarr.FurthestPoint(eastarr.Mean());
+  east := eastarr.FurthestPoint(westarr.Mean());
+
+  n := ArcTan2(north.y - Self.CompassCenter.y, north.x - Self.CompassCenter.x) + PI/2;
+  s := ArcTan2(south.y - Self.CompassCenter.y, south.x - Self.CompassCenter.x) - PI/2;
+  w := ArcTan2(west.y  - Self.CompassCenter.y, west.x  - Self.CompassCenter.x) + PI;
+  e := ArcTan2(east.y  - Self.CompassCenter.y, east.x  - Self.CompassCenter.x);
+
+  x := Cos(s) + Cos(e) + Cos(w) + Cos(n);
+  y := Sin(s) + Sin(e) + Sin(w) + Sin(n);
+
+  Result := RadToDeg(ArcTan2(y/4, x/4));
+  if Result < 0 then
+    Result := Result + 360;
+
+  Self.CompassCache.Deg := Result;
+end;
+
+function TRSMinimap.GetDots(Dots: EMinimapDots): TPointArray; overload;
 var
   Dot: EMinimapDot;
   Img: TImage;
@@ -89,12 +138,12 @@ begin
   Target.UnFreezeImage();
 end;
 
-function TRSMinimapInterface.GetDots(Dot: EMinimapDot): TPointArray; overload;
+function TRSMinimap.GetDots(Dot: EMinimapDot): TPointArray; overload;
 begin
   Result := Self.GetDots([Dot]);
 end;
 
-function TRSMinimapInterface.IsPointOn(P: TPoint): Boolean;
+function TRSMinimap.IsPointOn(P: TPoint): Boolean;
 begin
   if (P in Self.Bounds) then
   begin
@@ -105,7 +154,7 @@ begin
   end;
 end;
 
-function TRSMinimapInterface.IsPointOnEx(P: TPoint; SizeMod: Double): Boolean;
+function TRSMinimap.IsPointOnEx(P: TPoint; SizeMod: Double): Boolean;
 begin
   if (P in Self.Bounds) then
   begin
@@ -116,7 +165,7 @@ begin
   end;
 end;
 
-function TRSMinimapInterface.FilterPoints(Points: TPointArray): TPointArray;
+function TRSMinimap.FilterPoints(Points: TPointArray): TPointArray;
 var
   Mask: TPointArray;
 begin
@@ -124,17 +173,17 @@ begin
   Result := Points.Intersection(Mask);
 end;
 
-function TRSMinimapInterface.CountColorMasked(Color: TColor; Tolerance: Single = 0): Integer; overload;
+function TRSMinimap.CountColor(Color: TColor; Tolerance: Single = 0): Integer; overload;
 begin
   Result := Length(Self.FilterPoints(Target.FindColor(Color, Tolerance, Self.Bounds)));
 end;
 
-function TRSMinimapInterface.CountColorMasked(Color: TColorTolerance): Integer; overload;
+function TRSMinimap.CountColor(Color: TColorTolerance): Integer; overload;
 begin
   Result := Length(Self.FilterPoints(Target.FindColor(Color, Self.Bounds)));
 end;
 
-procedure TRSMinimapInterface.Setup;
+procedure TRSMinimap.Setup;
 begin
   case RSClient.ClientMode() of
     ERSClientMode.FIXED:
@@ -162,7 +211,8 @@ begin
   end;
 
   Self.Center := Self.Bounds.Center;
+  Self.CompassCenter := Self.CompassBounds.Center;
 end;
 
 var
-  Minimap: TRSMinimapInterface;
+  Minimap: TRSMinimap;

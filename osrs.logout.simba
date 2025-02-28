@@ -2,53 +2,64 @@
 {$include_once osrs.simba}
 
 type
-  TRSLogoutTab = record
-    const ELEMENT_WS_WORLD:             TRSInterfaceElement = [20, 1, 145, 20, False];
-    const ELEMENT_WS_LOGOUT:            TRSInterfaceElement = [168, 236, 18, 22, False];
-    const ELEMENT_WS_CLOSE:             TRSInterfaceElement = [170, 3, 18, 18, False];
-    const ELEMENT_WORLDSWITCHER_BUTTON: TRSInterfaceElement = [28, 167, 133, 25, False];
-    const ELEMENT_LOGOUT_BUTTON:        TRSInterfaceElement = [28, 215, 133, 25, False];
+  TRSLogout = record
+    ElementCurrentWorld: TRSInterfaceElement;
+    ElementLogout: TRSInterfaceElement;
+    ElementWorldSwitcher: TRSInterfaceElement;
+    ElementWorldSwitcherClose: TRSInterfaceElement;
 
     Bounds: TBox;
   end;
 
-function TRSLogoutTab.IsOpen: Boolean;
+function TRSLogout.IsOpen: Boolean;
 begin
   Result := GameTabs.IsCurrentTab(ERSGameTab.LOGOUT);
 end;
 
-function TRSLogoutTab.Open: Boolean;
+function TRSLogout.Open: Boolean;
 begin
   Result := GameTabs.Open(ERSGameTab.LOGOUT);
 end;
 
-function TRSLogoutTab.GetCurrentWorld: Integer;
+function TRSLogout.OpenWorldSwitcher: Boolean;
 begin
-  if Self.IsOpen() then
+  if Self.Open() and (not Self.IsWorldSwitcherOpen()) then
   begin
-    while InterfaceUtils.ElementHasText(Self.ELEMENT_WS_WORLD, Self.Bounds, 'Loading', RSColors.TEXT_GREY, FONT_BOLD_12) do
-      Sleep(50);
+    Self.ElementWorldSwitcher.Click();
 
-    Result := InterfaceUtils.ElementReadNumber(Self.ELEMENT_WS_WORLD, Self.Bounds, RSColors.TEXT_ORANGE, FONT_BOLD_12);
+    Result := SleepUntil(Self.IsWorldSwitcherOpen(), RandomLeft(100, 1000), 2000);
   end;
 end;
 
-function TRSLogoutTab.IsWorldSwitcherOpen: Boolean;
+function TRSLogout.GetCurrentWorld: Integer;
+var
+  Text: String;
 begin
-  Result := Self.GetCurrentWorld() <> 0;
+  if Self.IsOpen() then
+  begin
+    while Self.ElementCurrentWorld.HasText('Loading', [RSColors.TEXT_ORANGE], 1, FONT_BOLD) do
+      Sleep(50);
+
+    Text := Self.ElementCurrentWorld.ReadText([RSColors.TEXT_ORANGE], 0, FONT_BOLD);
+    Result := Text.After('- ').ToInt(-1);
+  end;
 end;
 
-function TRSLogoutTab.CloseWorldSwitcher: Boolean;
+function TRSLogout.IsWorldSwitcherOpen: Boolean;
+begin
+  Result := Self.GetCurrentWorld() > 0;
+end;
+
+function TRSLogout.CloseWorldSwitcher: Boolean;
 begin
   if not Self.IsWorldSwitcherOpen() then
     Exit(True);
 
-  InterfaceUtils.ElementClick(Self.ELEMENT_WS_CLOSE, Self.Bounds);
-
+  Self.ElementWorldSwitcherClose.Click();
   Result := SleepUntil(not Self.IsWorldSwitcherOpen(), RandomLeft(100, 1000), 3000);
 end;
 
-function TRSLogoutTab.ClickLogout(Attempts: Int32 = 5; TryTime: Int32 = 20000): Boolean;
+function TRSLogout.ClickLogout(Attempts: Int32 = 5; TryTime: Int32 = 20000): Boolean;
 var
   Interval: Integer;
 begin
@@ -59,16 +70,21 @@ begin
 
   for 1 to Attempts do
   begin
-    InterfaceUtils.ElementClick(Self.ELEMENT_LOGOUT_BUTTON, Self.Bounds);
+    Self.ElementLogout.Click();
     if RSClient.IsLoggedOut(Interval + Random(-1000, 1000)) then
       Exit(True);
   end;
 end;
 
-procedure TRSLogoutTab.Setup;
+procedure TRSLogout.Setup;
 begin
   Self.Bounds := GameTabs.TabBounds;
+
+  Self.ElementCurrentWorld       := TRSInterfaceElement.Create(Self.Bounds, 'ElementCurrentWorld', [20, 2, 147, 18, False]);
+  Self.ElementLogout             := TRSInterfaceElement.Create(Self.Bounds, 'ElementLogout', [29, 216, 131, 23, False]);
+  Self.ElementWorldSwitcher      := TRSInterfaceElement.Create(Self.Bounds, 'ElementWorldSwitcher', [29, 168, 131, 23, False]);
+  Self.ElementWorldSwitcherClose := TRSInterfaceElement.Create(Self.Bounds, 'ElementWorldSwitcherClose', [170, 3, 18, 18, False]);
 end;
 
 var
-  Logout: TRSLogoutTab;
+  Logout: TRSLogout;

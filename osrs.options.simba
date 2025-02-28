@@ -5,10 +5,10 @@ type
   ERSOptionsSubTab = enum(UNKNOWN, CONTROLS, AUDIO, DISPLAY);
 
   TRSOptionsTab = record
-    ElementZoom: TRSInterfaceElementNew;
-    ElementControlTab: TRSInterfaceElementNew;
-    ElementAudioTab: TRSInterfaceElementNew;
-    ElementDisplayTab: TRSInterfaceElementNew;
+    ElementZoom: TRSInterfaceElement;
+    ElementControlTab: TRSInterfaceElement;
+    ElementAudioTab: TRSInterfaceElement;
+    ElementDisplayTab: TRSInterfaceElement;
 
     Bounds: TBox;
   end;
@@ -42,9 +42,9 @@ function TRSOptionsTab.GetCurrentTab: ERSOptionsSubTab;
 begin
   if Self.Open() then
   begin
-    if Self.ElementControlTab.HasColor($29353E) then Exit(ERSOptionsSubTab.CONTROLS);
-    if Self.ElementAudioTab.HasColor($29353E)   then Exit(ERSOptionsSubTab.AUDIO);
-    if Self.ElementDisplayTab.HasColor($29353E) then Exit(ERSOptionsSubTab.DISPLAY);
+    if not Self.ElementControlTab.HasColor($1E2528) then Exit(ERSOptionsSubTab.CONTROLS);
+    if not Self.ElementAudioTab.HasColor($1E2528)   then Exit(ERSOptionsSubTab.AUDIO);
+    if not Self.ElementDisplayTab.HasColor($1E2528) then Exit(ERSOptionsSubTab.DISPLAY);
   end;
 end;
 
@@ -66,10 +66,10 @@ procedure TRSOptionsTab.Setup;
 begin
   Self.Bounds := GameTabs.TabBounds;
 
-  Self.ElementZoom       := TRSInterfaceElementNew.Create(Self.Bounds, 'ElementZoom', [66, 110, 96, 7, False]);
-  Self.ElementControlTab := TRSInterfaceElementNew.Create(Self.Bounds, 'ElementControlTab', [2, 8, 57, 21, False]);
-  Self.ElementAudioTab   := TRSInterfaceElementNew.Create(Self.Bounds, 'ElementAudioTab', [66, 8, 57, 21, False]);
-  Self.ElementDisplayTab := TRSInterfaceElementNew.Create(Self.Bounds, 'ElementDisplayTab', [130, 8, 57, 21, False]);
+  Self.ElementZoom       := TRSInterfaceElement.Create(Self.Bounds, 'ElementZoom', [66, 110, 96, 7, False]);
+  Self.ElementControlTab := TRSInterfaceElement.Create(Self.Bounds, 'ElementControlTab', [4, 8, 55, 21, False]);
+  Self.ElementAudioTab   := TRSInterfaceElement.Create(Self.Bounds, 'ElementAudioTab', [67, 8, 55, 21, False]);
+  Self.ElementDisplayTab := TRSInterfaceElement.Create(Self.Bounds, 'ElementDisplayTab', [130, 8, 55, 21, False]);
 end;
 
 var

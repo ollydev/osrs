@@ -8,17 +8,8 @@ type
   end;
 
 function TRSInterfaceUtils.IsTitle(Bounds: TBox; Text: String; MinMatch: Single = 0.80): Boolean;
-var
-  B: TBox;
 begin
-  B := Bounds;
-  B.X1 += 70;
-  B.Y1 += 10;
-  B.X2 -= 70;
-  B.Y2 := B.Y1 + 18;
-  B := B.Clip(Bounds);
-
-  Result := OCR.Locate(B, Text, FONT_BOLD_12, TOCRInvertColorFilter.Create([3358536, 0], [5, 0])) >= MinMatch;
+  Result := OCR.LocateInvert([Bounds.X1 + 70, Bounds.Y1 + 10, Bounds.X2 - 70, Bounds.Y1 + 18], Text, [$344049,0], 2, FONT_BOLD) >= MinMatch;
 end;
 
 function TRSInterfaceUtils.BoundsFromTopLeft(Offset: TPoint; Width, Height: Integer): TBox;
@@ -123,26 +114,19 @@ begin
 end;
 
 type
-  PRSInterfaceElement = ^TRSInterfaceElement;
-  TRSInterfaceElement = record
-    X, Y: Integer;
-    Width, Height: Integer;
-    FromBottom: Boolean;
-  end;
-
   TRSInterfaceElementPlacement = record
     X, Y: Integer;
     Width, Height: Integer;
     FromBottom: Boolean;
   end;
 
-  TRSInterfaceElementNew = record
+  TRSInterfaceElement = record
     Name: ShortString;
     Placement: TRSInterfaceElementPlacement;
     Bounds: TBox;
   end;
 
-function TRSInterfaceElementNew.Create(InterfaceBounds: TBox; Name: String; Placement: TRSInterfaceElementPlacement): TRSInterfaceElementNew; static;
+function TRSInterfaceElement.Create(InterfaceBounds: TBox; Name: String; Placement: TRSInterfaceElementPlacement): TRSInterfaceElement; static;
 begin
   Result.Name := Name;
   Result.Placement := Placement;
@@ -164,65 +148,35 @@ begin
   end;
 end;
 
-function TRSInterfaceElementNew.HasColor(Color: TColor; MinCount: Integer = 1): Boolean;
+function TRSInterfaceElement.HasColor(Color: TColor; MinCount: Integer = 1): Boolean;
 begin
   Result := Target.HasColor(Color, 0, MinCount, Self.Bounds);
 end;
 
-procedure TRSInterfaceElementNew.Click(Button: EMouseButton = EMouseButton.LEFT);
+function TRSInterfaceElement.ReadText(Colors: TColorArray; Tolerance: Single; Font: TPixelFont): String;
+begin
+  Result := OCR.Recognize(Self.Bounds, Font, Colors, Tolerance);
+end;
+
+function TRSInterfaceElement.ReadTextLines(Colors: TColorArray; Tolerance: Single; Font: TPixelFont): TStringArray;
+begin
+  Result := OCR.RecognizeLines(Self.Bounds, Font, Colors, Tolerance);
+end;
+
+function TRSInterfaceElement.ReadNumber(Colors: TColorArray; Tolerance: Single; Font: TPixelFont): Int64;
+begin
+  Result := OCR.Recognize(Self.Bounds, Font, Colors, Tolerance).ExtractInteger(-1);
+end;
+
+function TRSInterfaceElement.HasText(Text: String; Colors: TColorArray; Tolerance: Single; Font: TPixelFont; MinMatch: Single = 1): Boolean;
+begin
+  Result := OCR.Locate(Self.Bounds, Text, Colors, Tolerance, Font) >= MinMatch;
+end;
+
+procedure TRSInterfaceElement.Click(Button: EMouseButton = EMouseButton.LEFT);
 begin
   Target.MouseMove(Self.Bounds);
   Target.MouseClick(Button);
-end;
-
-function TRSInterfaceUtils.ElementBounds(Element: TRSInterfaceElement; InterfaceBounds: TBox): TBox;
-begin
-  if Element.FromBottom then
-  begin
-    Result.X1 := InterfaceBounds.X1 + Element.X;
-    Result.Y2 := InterfaceBounds.Height - Element.Y;
-
-    Result.X2 := Result.X1 + Element.Width;
-    Result.Y1 := Result.Y2 - Element.Height;
-  end else
-  begin
-    Result.X1 := InterfaceBounds.X1 + Element.X;
-    Result.Y1 := InterfaceBounds.Y1 + Element.Y;
-
-    Result.X2 := Result.X1 + Element.Width;
-    Result.Y2 := Result.Y1 + Element.Height;
-  end;
-end;
-
-function TRSInterfaceUtils.ElementReadText(Element: TRSInterfaceElement; InterfaceBounds: TBox; Color: TColor; Font: TFontSet): String;
-begin
-  Result := OCR.Recognize(Self.ElementBounds(Element, InterfaceBounds), TOCRColorFilter.Create([Color]), Font);
-end;
-
-function TRSInterfaceUtils.ElementReadTextLines(Element: TRSInterfaceElement; InterfaceBounds: TBox; Color: TColor; Font: TFontSet): TStringArray;
-begin
-  Result := OCR.RecognizeLines(Self.ElementBounds(Element, InterfaceBounds), TOCRColorFilter.Create([Color]), Font);
-end;
-
-function TRSInterfaceUtils.ElementReadNumber(Element: TRSInterfaceElement; InterfaceBounds: TBox; Color: TColor; Font: TFontSet): Integer;
-begin
-  Result := OCR.RecognizeNumber(Self.ElementBounds(Element, InterfaceBounds), TOCRColorFilter.Create([Color]), Font);
-end;
-
-function TRSInterfaceUtils.ElementHasText(Element: TRSInterfaceElement; InterfaceBounds: TBox; Text: String; Color: TColor; Font: TFontSet; MinMatch: Single = 1): Boolean;
-begin
-  Result := OCR.Locate(Self.ElementBounds(Element, InterfaceBounds), Text, Font, TOCRColorFilter.Create([Color])) >= MinMatch;
-end;
-
-function TRSInterfaceUtils.ElementHasColor(Element: TRSInterfaceElement; InterfaceBounds: TBox; Color: TColor; MinCount: Integer = 1): Boolean;
-begin
-  Result := Target.HasColor(Color, 0, MinCount, Self.ElementBounds(Element, InterfaceBounds));
-end;
-
-procedure TRSInterfaceUtils.ElementClick(Element: TRSInterfaceElement; InterfaceBounds: TBox);
-begin
-  Target.MouseMove(Self.ElementBounds(Element, InterfaceBounds).RandomPointCenter());
-  Target.MouseClick(EMouseButton.LEFT);
 end;
 
 function TRSInterfaceUtils.ItemFind(ItemNames: TStringArray; Boxes: TBoxArray; MaxToFind: Integer = -1): TIntegerArray; overload;

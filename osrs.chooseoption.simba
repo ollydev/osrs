@@ -2,11 +2,11 @@
 {$include_once osrs.simba}
 
 type
-  TRSOption = record
+  TRSMenuEntry = record
     Text: String;
     Bounds: TBox;
   end;
-  TRSOptionArray = array of TRSOption;
+  TRSMenuEntryArray = array of TRSMenuEntry;
 
   TRSChooseOption = record
     const TitleImg: TImage = ImageFromString('IMG:AQAAAGYAAAASAAAAAAAAAP21aQABAAAAIKprAAEAAADI5D8BAAAAAM0CAQABAAAAOIe7BgAAAAAApLsGAAAAADQBAACYAQAAOIe7BgAAAAABAAAAZgAAABIAAAAYAAAAAAAAAAAAAAAAAAAAAwAAABgIEAgICAAAAAEAAAIAAAAAAAAAAAAAAAAAAAAAiVBORw0KGgoAAAANSUhEUgAAAGYAAAASCAIAAAAmDjziAAAAzUlEQVR4nO2U0Q2AMAhE3c4F/HX/NYzxo9oWvAO0mkBqoqTA9Qmd1mXORa1pf9IoS2S0JTLaWmRlaK+ed3X1rdU2RkT1eXjOysarvMoA9TwlG+mmLyAzNH4iC0AWcxAcWfce8fjb0sqRdGSenEpUP5BCVu3xvEs4wE63lcOjtEuTHUwnJuXH4hpspf3iSxZJVkglPCcyRGZJkeKlpFGYPMMohRjwRYpvXdTgSN2hDODtfgUfG1s5EfEWZL8zsEkj671X7BlLZLQNQJaLWhvxdfuwwsTSHQAAAABJRU5ErkJggg==');
@@ -38,7 +38,7 @@ begin
   Result := Self.IsOpen(_);
 end;
 
-function TRSChooseOption.GetOptions: TRSOptionArray;
+function TRSChooseOption.GetEntries: TRSMenuEntryArray;
 var
   I: Integer;
   Bounds, B: TBox;
@@ -58,20 +58,10 @@ begin
         Exit;
       end;
 
-      Result[I].Text := OCR.RecognizeStatic(B, TOCRInvertColorFilter.Create([4674653, 0]), FONT_BOLD_12_SHADOW);
+      Result[I].Text := OCR.RecognizeStaticInvert(B, FONT_BOLD_SHADOW, [4674653, 0]);
       Result[I].Bounds := B;
     end;
   end;
-end;
-
-function TRSChooseOption.Select(Option: String): Boolean;
-begin
-
-end;
-
-function TRSChooseOption.Close: Boolean;
-begin
-
 end;
 
 var

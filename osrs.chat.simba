@@ -11,71 +11,79 @@ type
 function TRSChat.GetDisplayNameBox(out Color: TColor): TBox; overload;
 var
   TPA: TPointArray;
-  B: TBox;
 begin
-  B := Self.InputLineBox;
   for Color in [$FFFFFF, $000000] do
   begin
-    TPA := Target.FindColor(Color, 0, B);
-    if Length(TPA) then
+    TPA := Target.FindColor(Color, 0, Self.InputLineBox);
+    if (Length(TPA) > 0) then
       Exit(TPA.Bounds());
   end;
 end;
 
 function TRSChat.GetDisplayNameBox(): TBox; overload;
 var
-  Color: TColor;
+  _: TColor;
 begin
-  Result := Self.GetDisplayNameBox(Color);
+  Result := Self.GetDisplayNameBox(_);
 end;
 
 function TRSChat.GetDisplayName(): String;
-var
-  Color: TColor;
 begin
-  Result := OCR.Recognize(Self.GetDisplayNameBox(Color).Expand(2), TOCRColorFilter.Create([Color]), FONT_PLAIN_12);
-  Result := Result.TrimRight([':']);
+  Result := OCR.RecognizeStatic(Self.InputLineBox, FONT_PLAIN_12, [Colors.WHITE], 0);
+  if (Result.Pop <> ':') then
+    Result := '';
 end;
 
 function TRSChat.GetLineText(Line: Integer): String;
 const
-  StaticOffset = 2; // Make static text placement so RecognizeStatic can be used
-  Background: TColorTolerance = [$6793AA, 3.287, EColorSpace.HSL, [2.025, 0.581, 0.395]];
+  StaticOffset = 2; // Make static text placement so static recognition can be used
+
+  function RecognizeTransparent(b: TBox): String;
+  var
+    Image: TImage;
+    TPA: TPointArray;
+  begin
+    Image := TImage.CreateFromTarget(b);
+
+    // First shadow from above line draws over our line.
+    // Mark the shadow as a match since OCR requires 100% character match.
+    TPA := Image.FindColor($000000, 0, [0, StaticOffset, Image.Width, StaticOffset]);
+    Image.DrawColor := $FFFFFF;
+    Image.DrawTPA(TPA);
+
+    // Now find shadows, offset by -1,-1 to find colors of text
+    TPA := Image.FindColor(0, 0, [1, 1, Image.Width, Image.Height]);
+    TPA := TPA.Offset([-1,-1]).ExcludePoints(TPA);
+    Image.ReplaceColorBinary(False, Image.GetColors(TPA).Unique, 0);
+
+    Result := OCR.Engine.Recognize(Image, FONT_PLAIN_12, [0,0]);
+
+    Image.Free();
+  end;
+
+  function Recognize(b: TBox): String;
+  const
+    BG_COLOR: TColorTolerance = [$6793AA, 3.287, EColorSpace.HSL, [2.025, 0.581, 0.395]];
+  var
+    TPA: TPointArray;
+    TextColors: TColorArray;
+  begin
+    TPA := Target.FindColor(BG_COLOR, B).Invert();
+    TextColors := Target.GetColors(TPA).Unique();
+
+    Result := OCR.Recognize(b, FONT_PLAIN_12, TextColors, 0);
+  end;
+
 var
   B: TBox;
-  X, Y: Integer;
-  BackgroundInv: TPointArray;
-  Color: TColor;
-  Colors: TColorArray;
-  Mat: TIntegerMatrix;
 begin
   B := Self.LineBoxes[Line];
   B.Y1 -= StaticOffset;
 
   if Self.IsTransparent() then
-  begin
-    Mat := Target.GetColorsMatrix(B);
-
-    // Shadow from above line draws over our line.
-    // Mark the shadow as a match since OCR requires 100% character match.
-    for X := 0 to B.Width - 1 do
-      if (Mat[StaticOffset, X] = 0) then
-        Mat[StaticOffset, X] := $FFFFFF;
-
-    // Get colors from shadow -1,-1
-    for Y:=1 to Mat.Height - 1 do
-      for X:=1 to Mat.Width - 1 do
-        if (Mat[Y, X] = 0) and (Mat[Y-1, X-1] <> 0) then
-          Colors += Mat[Y-1, X-1];
-
-    Result := OCR.RecognizeStatic(Mat, TOCRColorFilter.Create(Colors.Unique()), FONT_PLAIN_12);
-  end else
-  begin
-    BackgroundInv := Target.FindColor(Background, B).Invert();
-    Colors := Target.GetColors(BackgroundInv).Unique();
-
-    Result := OCR.RecognizeStatic(B, TOCRColorFilter.Create(Colors), FONT_PLAIN_12);
-  end;
+    Result := RecognizeTransparent(B)
+  else
+    Result := Recognize(B);
 end;
 
 function TRSChat.GetText: TStringArray;
@@ -101,6 +109,7 @@ begin
   Self.Bounds := InterfaceUtils.BoundsFromBottomLeft([0, -165], 518, 141);
   Self.LineBoxes := TBoxArray.Create([Self.Bounds.X1 + 10, Self.Bounds.Y1 + 8], 1, 9, Self.Bounds.Width - 35, 13, [0, 1]);
   Self.InputLineBox := Self.LineBoxes.Pop;
+  Self.InputLineBox.Y2 += 2;
 end;
 
 var

@@ -1,0 +1,217 @@
+{$assertions on}
+
+var
+  ocr: TPixelOCR;
+  img: TImage;
+  FontBold12: TPixelFont;
+  FontBold12Shadow: TPixelFont;
+  FontPlain11: TPixelFont;
+  FontPlain12: TPixelFont;
+  FontQuill8: TPixelFont;
+
+begin
+  img := TImage.Create();
+  img.FreeOnTerminate := True;
+
+  FontBold12       := ocr.LoadFont({$MACRO DIR} + '../fonts/Bold 12', 4);
+  FontBold12Shadow := ocr.LoadFont({$MACRO DIR} + '../fonts/Bold 12 Shadow', 4);
+  FontPlain11      := ocr.LoadFont({$MACRO DIR} + '../fonts/Plain 11', 4);
+  FontPlain12      := ocr.LoadFont({$MACRO DIR} + '../fonts/Plain 12', 4);
+  FontQuill8       := ocr.LoadFont({$MACRO DIR} + '../fonts/Quill 8', 4);
+end;
+
+procedure Test;
+begin
+  img.Load({$MACRO DIR} + 'test.png');
+  img.ReplaceColorBinary(False, [$1F98FF,$0000FF]);
+
+  Assert(ocr.Recognize(img, FontBold12, [0,0,img.Width-1,img.Height-1]) = 'Showing items: hello');
+  Assert(ocr.Recognize(img, FontBold12, [30,24]) = 'Showing items: hello');
+end;
+
+procedure Test_UpText;
+
+  procedure test(y: Integer; Expected: String);
+  begin
+    Assert(ocr.Recognize(img, FontBold12Shadow, [0,y]) = Expected);
+  end;
+
+begin
+  ocr.Tolerance := 25;
+  ocr.ShadowTolerance := 65;
+  ocr.Whitelist := ['a'..'z', 'A'..'Z', '0'..'9', '-', '>', '(', ')', '/'];
+
+  img.Load({$MACRO DIR} + 'uptext.png');
+
+  test(20, 'Talk-to Grand Exchange Clerk / 98 more options');
+  test(39, 'Bank Bank booth / 3 more options');
+  test(58, 'Remove Chaotic handegg / 1 more options');
+  test(76, 'Use Body rune -> King Roald / 1 more options');
+  test(95, 'Pray-at Altar / 2 more options');
+  test(114, 'Attack Grizzly bear (level-21) / 2 more options');
+  test(133, 'Use Gold bar -> BAYRAKTAR22 (level-109) / 2 more ootions');
+  test(168, 'Talk-to Grand Exchange Clerk / 10 more options');
+  test(187, 'Use Super strength(3) (Members) -> 23 Steal 155 (level-82)');
+  test(206, 'Take Green dhide vambraces / 2 more options');
+  test(225, 'Use Super strength(3) (Members) -> Hanging banner / 2 more');
+  test(244, 'Use Body rune -> Fireplace');
+  test(262, 'Talk-to Cook / 2 more options');
+  test(281, 'Use Body rune -> Spider (level-1)');
+  test(300, 'Use Gold bar -> Barrel / 1 more options');
+  test(318, 'Use Body rune -> Cooking Pots / 1 more options');
+  test(336, 'Take Mind rune / 2 more ootions');
+  test(352, 'Withdraw-1 Gold bracelet (Members) / 8 more options');
+  test(371, 'Talk-to Banker tutor / 8 more options');
+  test(390, 'Use Gold bar -> Super strength(3) (Members)');
+  test(408, 'Use Berserker ring (i) (Members) -> Rm s (level-126) / 1 more options');
+  test(428, 'Talk-to Saradominist recruiter / 3 more options');
+  test(448, 'Withdraw-1 Clue geode (har) (Members) / 8 more options');
+  test(467, 'Talk-to Spirit tree / 3 more options');
+end;
+
+procedure Test_MultiLine1;
+var
+  Lines: TStringArray;
+begin
+  img.Load({$MACRO DIR} + 'multiline1.png');
+  img.ReplaceColorBinary(False, [$000000, $000080]);
+
+  Lines := ocr.RecognizeLines(img, FontQuill8, [0,0,img.Width-1,img.Height-1]);
+
+  Assert(Length(Lines) = 5);
+  Assert(Lines[0] = 'Select an Option');
+  Assert(Lines[1] = 'I''d like to access my bank account, please.');
+  Assert(Lines[2] = 'I''d like to check my PIN settings.');
+  Assert(Lines[3] = 'I''d like to collect items.');
+  Assert(Lines[4] = 'What is this place?');
+end;
+
+procedure Test_MultiLine2;
+var
+  Lines: TStringArray;
+begin
+  img.Load({$MACRO DIR} + 'multiline2.png');
+  img.ReplaceColorBinary(False, $000000, 1);
+
+  Lines := ocr.RecognizeLines(img, FontPlain12, [0,0,img.Width-1,img.Height-1]);
+
+  Assert(Length(Lines) = 2);
+  Assert(Lines[0] = 'Blighted super');
+  Assert(Lines[1] = 'restore(4)');
+end;
+
+procedure Test_MultiLine3;
+var
+  Lines: TStringArray;
+begin
+  img.Load({$MACRO DIR} + 'multiline3.png');
+  img.ReplaceColorBinary(False, $009933, 5);
+
+  Lines := ocr.RecognizeLines(img, FontPlain11, [0,0,img.Width-1,img.Height-1]);
+  Assert(Length(Lines) = 5);
+  Assert(Lines[0] = 'Leather Boots:');
+  Assert(Lines[1] = 'Adamant Kiteshield:');
+  Assert(Lines[2] = 'Adamant Helm:');
+  Assert(Lines[3] = 'Emerald:');
+  Assert(Lines[4] = 'Rune Longsword:');
+
+  img.Load({$MACRO DIR} + 'multiline3.png');
+  img.ReplaceColorBinary(False, $00CC33, 5);
+
+  Lines := ocr.RecognizeLines(img, FontPlain11, [0,0,img.Width-1,img.Height-1]);
+  Assert(Length(Lines) = 6);
+  Assert(Lines[0] = '0');
+  Assert(Lines[1] = '5');
+  Assert(Lines[2] = '1');
+  Assert(Lines[3] = '30');
+  Assert(Lines[4] = '15');
+  Assert(Lines[5] = '8');
+end;
+
+procedure Test_MultiLine4;
+var
+  Lines: TStringArray;
+begin
+  img.Load({$MACRO DIR} + 'multiline4.png');
+  img.ReplaceColorBinary(False, $000000, 1);
+
+  Lines := ocr.RecognizeLines(img, FontPlain12, [0,0,img.Width-1,img.Height-1]);
+  Assert(Length(Lines) = 3);
+  Assert(Lines[0] = 'Fishing XP: 20');
+  Assert(Lines[1] = 'Next level at: 83');
+  Assert(Lines[2] = 'Remaining XP: 63');
+end;
+
+procedure Test_MultiLine5;
+var
+  Lines: TStringArray;
+begin
+  img.Load({$MACRO DIR} + 'multiline5.png');
+  img.ReplaceColorBinary(False, $2F4D4D);
+
+  Lines := ocr.RecognizeLines(img, FontPlain12, [0,0,img.Width-1,img.Height-1]);
+
+  Assert(Length(Lines) = 7);
+  Assert(Lines[0] = 'Ahrim');
+  Assert(Lines[1] = 'Dharok');
+  Assert(Lines[2] = 'Guthan');
+  Assert(Lines[3] = 'Karil');
+  Assert(Lines[4] = 'Torag');
+  Assert(Lines[5] = 'Verac');
+  Assert(Lines[6] = 'Rewards potential: 0%');
+end;
+
+procedure Test_MultiLine6;
+var
+  Lines: TStringArray;
+begin
+  img.Load({$MACRO DIR} + 'multiline6.png');
+  img.ReplaceColorBinary(False, $000000, 1);
+
+  Lines := ocr.RecognizeLines(img, FontQuill8, [0,0,img.Width-1,img.Height-1]);
+
+  Assert(Length(Lines) = 4);
+  Assert(Lines[0] = 'Al Kharid PvP Arena.');
+  Assert(Lines[1] = 'Castle Wars Arena.');
+  Assert(Lines[2] = 'Ferox Enclave.');
+  Assert(Lines[3] = 'Nowhere.');
+end;
+
+procedure Test_Locate;
+begin
+  img.Load({$MACRO DIR} + 'test.png');
+  img.ReplaceColorBinary(False, [$1F98FF, $0000FF]);
+
+  ocr.Locate(img, FontBold12, 'Showing');
+  Assert(Length(ocr.Matches) = 1);
+  Assert(ocr.Matches[0] = ['Showing', 100, [30,26,81,40]]);
+
+  img.Load({$MACRO DIR} + 'test.png');
+  img.ReplaceColorBinary(False, [$1F98FF, $0000FF]);
+  img.DrawColor := $FFFFFF;
+  img.DrawBoxFilled([106,30,113,35]); // fill the whole m, will still match (with a worse %) as everything is still a hit
+  ocr.Locate(img, FontBold12, 'item');
+  Assert(Length(ocr.Matches) = 1);
+  Assert(ocr.Matches[0] = ['item', 93, [87,27,113,36]]);
+
+  img.Load({$MACRO DIR} + 'test.png');
+  ocr.Locate(img, FontBold12, 'items');
+  Assert(Length(ocr.Matches) = 1);
+  Assert(ocr.Matches[0] = ['items', 100, [87,27,121,36]]);
+end;
+
+begin
+  Test();
+
+  Test_MultiLine1();
+  Test_MultiLine2();
+  Test_MultiLine3();
+  Test_MultiLine4();
+  Test_MultiLine5();
+  Test_MultiLine6();
+
+  Test_UpText();
+
+  Test_Locate();
+end;
+
