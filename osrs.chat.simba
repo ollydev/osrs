@@ -104,6 +104,16 @@ begin
   Result := Color = (Colors.WHITE);
 end;
 
+function TRSChat.GetQuery: String;
+begin
+  Result := OCR.RecognizeLines(Self.Bounds, FONT_BOLD, [0], 1).Join(' ');
+end;
+
+function TRSChat.AnswerQuery(Query, Answer: String): Boolean;
+begin
+
+end;
+
 procedure TRSChat.Setup;
 begin
   Self.Bounds := InterfaceUtils.BoundsFromBottomLeft([0, -165], 518, 141);

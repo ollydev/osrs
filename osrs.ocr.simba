@@ -90,7 +90,6 @@ var
 begin
   img := TImage.CreateFromTarget(Bounds);
   img.ReplaceColorBinary(True, Colors, Tolerance);
-  img.Show();
   Result := Self.Engine.Locate(img, Font, Text);
   img.Free();
 end;
@@ -101,22 +100,15 @@ const
   Multipliers = [1, 1000, 1000000];
 var
   I: Integer;
+  Text: String;
 begin
-  //for I := 0 to High(Colors) do
-  //begin
-  //  Result := OCR.RecognizeNumber(Area, TOCRColorFilter.Create([Colors[I]]), FONT_PLAIN_11) * Multipliers[I];
-  //  if (Result > 0) then
-  //    Exit;
-  //end;
+  for I := 0 to High(Colors) do
+  begin
+    Text := OCR.Recognize(Area.Expand(1), FONT_PLAIN_11, [Colors[I]], 0);
+    if Text.IsInteger then
+      Exit(Text.ToInt() * Multipliers[I]);
+  end;
+  Result := -1;
 end;
 
-//function ClickText(Text: String; Color: TColor; Font: TFontSet; Area: TBox = [-1,-1,-1,-1]): Boolean;
-//begin
-//  Result := OCR.Locate(Area, Text, Font, TOCRColorFilter.Create([Color])) = 1;
-//  if Result then
-//  begin
-//    Target.MouseMove(OCR.Matches[0].Bounds);
-//    Target.MouseClick(EMouseButton.LEFT);
-//  end;
-//end;
 

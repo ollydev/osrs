@@ -1,0 +1,48 @@
+{$DEFINE INCLUDED_EQUIPMENT}
+{$include_once osrs.simba}
+
+type
+  ERSEquipmentSlot = enum(
+    HEAD,
+    CAPE, NECK, AMMO,
+    WEAPON, BODY, SHIELD,
+    LEGS,
+    HANDS, FEET, RING
+  );
+
+  TRSEquipmentTab = record
+    Bounds: TBox;
+    Slots: TBoxArray;
+  end;
+
+function TRSEquipmentTab.IsOpen: Boolean;
+begin
+  Result := GameTabs.IsCurrentTab(ERSGameTab.EQUIPMENT);
+end;
+
+function TRSEquipmentTab.Open: Boolean;
+begin
+  Result := GameTabs.Open(ERSGameTab.EQUIPMENT);
+end;
+
+function TRSEquipmentTab.IsWearing(Item: String; Slot: ERSEquipmentSlot): Boolean;
+begin
+  if not Self.Open() then
+    Exit;
+
+  Result := InterfaceUtils.ItemFind(Item, [Self.Slots[Slot]]) <> [];
+end;
+
+procedure TRSEquipmentTab.Setup;
+begin
+  Self.Bounds := GameTabs.TabBounds;
+
+  Self.Slots := TBoxArray.Create(Self.Bounds.TopLeft + [79,7],   1, 1, 31, 31, [0,0])  +
+                TBoxArray.Create(Self.Bounds.TopLeft + [38,46],  3, 1, 31, 31, [10,0]) +
+                TBoxArray.Create(Self.Bounds.TopLeft + [23,85],  3, 1, 31, 31, [25,0]) +
+                TBoxArray.Create(Self.Bounds.TopLeft + [79,125], 1, 1, 31, 31, [10,0]) +
+                TBoxArray.Create(Self.Bounds.TopLeft + [23,165], 3, 1, 31, 31, [25,0]);
+end;
+
+var
+  Equipment: TRSEquipmentTab;

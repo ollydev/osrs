@@ -1,0 +1,98 @@
+{$DEFINE INCLUDED_SKILLS}
+{$include_once osrs.simba}
+
+type
+  ERSSkill = enum(
+    ATTACK,       HITPOINTS, MINING,
+    STRENGTH,     AGILITY,   SMITHING,
+    DEFENCE,      HERBLORE,  FISHING,
+    RANGE,        THIEVING,  COOKING,
+    PRAYER,       CRAFTING,  FIREMAKING,
+    MAGIC,        FLETCHING, WOODCUTTING,
+    RUNECRAFTING, SLAYER,    FARMING,
+    CONSTRUCTION, HUNTER,    TOTAL
+  );
+
+  TRSSkillInfo = record
+    Skill: ERSSkill;
+    XP: Integer;
+    RemainingXP: Integer;
+  end;
+
+  TRSSkillsTab = record
+    Bounds: TBox;
+    Slots: TBoxArray;
+  end;
+
+function ERSSkill.Name: String;
+begin
+  Result := ToString(Self).After('.').Capitalize;
+end;
+
+function TRSSkillsTab.IsOpen: Boolean;
+begin
+  Result := GameTabs.IsCurrentTab(ERSGameTab.STATS);
+end;
+
+function TRSSkillsTab.Open: Boolean;
+begin
+  Result := GameTabs.Open(ERSGameTab.STATS);
+end;
+
+function TRSSkillsTab.MouseOver(Skill: ERSSkill): Boolean;
+begin
+  Result := Self.Open();
+  if Result then
+    Target.MouseMove(Self.Slots[Skill]);
+end;
+
+function TRSSkillsTab.GetSkillInfo(Skill: ERSSkill): TRSSkillInfo;
+
+  function Read(out Info: TRSSkillInfo): Boolean;
+  var
+    TPA: TPointArray;
+    Lines: TStringArray;
+  begin
+    TPA := Target.FindColor($A0FFFF, 0, Self.Bounds);
+    if (Length(TPA) > 0) then
+    begin
+      Lines := OCR.RecognizeLines(TPA.Bounds, FONT_PLAIN_12, [0], 1);
+      if (Length(Lines) >= 3) and (Lines[0].StartsWith(Skill.Name, False)) then
+      begin
+        Info.Skill := Skill;
+        Info.XP := Lines[0].After(': ').ToInt(-1);
+        Info.RemainingXP := Lines[2].After(': ').ToInt(-1);
+
+        Result := True;
+      end;
+    end;
+  end;
+
+begin
+  if Self.MouseOver(Skill) then
+    SleepUntil(Read(Result), RandomLeft(100, 1000), 3000);
+end;
+
+function TRSSkillsTab.GetLevel(Skill: ERSSkill): Integer;
+begin
+  if not Self.Open() then
+    Exit(-1);
+  Result := OCR.Recognize(Self.Slots[Skill].Partition(2,1)[1], FONT_PLAIN_11, [Colors.YELLOW], 0).ToInt(-1);
+end;
+
+function TRSSkillsTab.GetBoostedLevel(Skill: ERSSkill): Integer;
+begin
+  if not Self.Open() then
+    Exit(-1);
+  Result := OCR.Recognize(Self.Slots[Skill].Partition(2,1)[0], FONT_PLAIN_11, [Colors.YELLOW], 0).ToInt(-1);
+end;
+
+procedure TRSSkillsTab.Setup;
+begin
+  Self.Bounds := GameTabs.TabBounds;
+
+  Self.Slots := TBoxArray.Create(Self.Bounds.TopLeft + [2,5], 3, 8, 59, 25, [4,7]);
+end;
+
+var
+  Skills: TRSSkillsTab;

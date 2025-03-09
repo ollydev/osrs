@@ -6,6 +6,8 @@ begin
   Login.Setup();
   GameTabs.Setup();
   Inventory.Setup();
+  Equipment.Setup();
+  Skills.Setup();
   Logout.Setup();
   Options.Setup();
   Minimap.Setup();

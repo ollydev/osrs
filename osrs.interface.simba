@@ -9,7 +9,7 @@ type
 
 function TRSInterfaceUtils.IsTitle(Bounds: TBox; Text: String; MinMatch: Single = 0.80): Boolean;
 begin
-  Result := OCR.LocateInvert([Bounds.X1 + 70, Bounds.Y1 + 10, Bounds.X2 - 70, Bounds.Y1 + 18], Text, [$344049,0], 2, FONT_BOLD) >= MinMatch;
+  Result := OCR.LocateInvert([Bounds.X1 + 70, Bounds.Y1 + 10, Bounds.X2 - 70, Bounds.Y1 + 26], Text, [$344049,0], 2, FONT_BOLD) >= MinMatch;
 end;
 
 function TRSInterfaceUtils.BoundsFromTopLeft(Offset: TPoint; Width, Height: Integer): TBox;

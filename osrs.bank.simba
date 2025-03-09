@@ -96,6 +96,30 @@ begin
   Result := Self.FindItem(ItemName, ItemBox);
 end;
 
+function TRSBank.IsSearching: Boolean;
+begin
+  Result := Self.IsTitle('Showing items');
+end;
+
+function TRSBank.StopSearching: Boolean;
+begin
+  if Self.IsSearching() then
+  begin
+    Self.ElementSearch.Click();
+
+    Result := SleepUntil(not Self.IsSearching, RandomLeft(100, 1000), 2500);
+  end else
+    Result := True;
+end;
+
+function TRSBank.Search(Text: String): Boolean;
+begin
+  if not Self.StopSearching() then
+    Exit;
+
+
+end;
+
 procedure TRSBank.Setup;
 begin
   Self.Bounds := InterfaceUtils.BoundsFromCenter(488, 800);

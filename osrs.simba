@@ -8,6 +8,8 @@
 {$IFNDEF INCLUDED_BANKPIN}              {$I osrs.bankpin}
 {$IFNDEF INCLUDED_BANK}                 {$I osrs.bank}
 {$IFNDEF INCLUDED_INVENTORY}            {$I osrs.inventory}
+{$IFNDEF INCLUDED_EQUIPMENT}            {$I osrs.equipment}
+{$IFNDEF INCLUDED_SKILLS}               {$I osrs.skills}
 {$IFNDEF INCLUDED_MINIMAP}              {$I osrs.minimap}
 {$IFNDEF INCLUDED_XPBAR}                {$I osrs.xpbar}
 {$IFNDEF INCLUDED_LOGIN}                {$I osrs.login}
@@ -17,6 +19,8 @@
 {$IFNDEF INCLUDED_OPTIONS}              {$I osrs.options}
 {$IFNDEF INCLUDED_MAINSCREEN}           {$I osrs.mainscreen}
 {$IFNDEF INCLUDED_SETUP}                {$I osrs.setup}
+{$ENDIF}
+{$ENDIF}
 {$ENDIF}
 {$ENDIF}
 {$ENDIF}
