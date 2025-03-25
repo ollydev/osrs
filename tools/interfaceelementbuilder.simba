@@ -30,18 +30,15 @@ type
 procedure TRSInterfaceBuilder.DoOffsetDirectionClick(Sender: TObject);
 var
   Shape: TShapeBoxShape;
-  FromBottom: Boolean;
 begin
   Shape := Self.ShapeBox.Selected;
   if (Shape = []) then
     Exit;
 
-  FromBottom := (Sender = Self.MenuItemDirectionDown);
+  Self.MenuItemDirectionUp.Checked   := Sender = Self.MenuItemDirectionUp;
+  Self.MenuItemDirectionDown.Checked := Sender = Self.MenuItemDirectionDown;
 
-  Self.MenuItemDirectionUp.Checked := not FromBottom;
-  Self.MenuItemDirectionDown.Checked := FromBottom;
-
-  Boolean(Shape.UserData^) := FromBottom;
+  TRSInterfaceElement(Shape.UserData^).Placement.FromBottom := Self.MenuItemDirectionDown.Checked;
 
   Self.ShapeBox.RePaint();
 end;
@@ -95,7 +92,7 @@ procedure TRSInterfaceBuilder.DoInterfaceMenuClick(Sender: TObject);
   begin
     Result.Name := Str.Between('NAME = ', ',');
 
-    with (Str.Between('BOUNDS = {', '}') + '}') do // todo codetools
+    with (Str.Between('BOUNDS = {', '}') + '}') do
     begin
       Result.Bounds.X1 := Between('X1 = ', ',').ToInt() - Self.Bounds.X1;
       Result.Bounds.Y1 := Between('Y1 = ', ',').ToInt() - Self.Bounds.Y1;
