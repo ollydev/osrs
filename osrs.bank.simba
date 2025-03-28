@@ -27,6 +27,11 @@ begin
   Result := InterfaceUtils.IsTitle(Self.Bounds, Text);
 end;
 
+function TRSBank.ReadTitle: String;
+begin
+  Result := InterfaceUtils.ReadTitle(Self.Bounds);
+end;
+
 function TRSBank.IsOpen: Boolean;
 begin
   Result := Self.IsTitle('Bank') or Self.IsTitle('Tab') or Self.IsTitle('Showing') or Self.IsTitle('Equip');
@@ -98,7 +103,19 @@ end;
 
 function TRSBank.IsSearching: Boolean;
 begin
-  Result := Self.IsTitle('Showing items');
+  Result := Self.ElementSearch.ButtonEnabled;
+end;
+
+function TRSBank.GetCurrentSearch: String;
+var
+  Text: String;
+begin
+  if (MainScreen.GetUpText() <> 'Search') then
+    Self.ElementSearch.Hover();
+
+  Text := Self.ReadTitle();
+  if Text.StartsWith('Showing items: ') then
+    Result := Text.After('Showing items: ');
 end;
 
 function TRSBank.StopSearching: Boolean;
@@ -107,17 +124,28 @@ begin
   begin
     Self.ElementSearch.Click();
 
-    Result := SleepUntil(not Self.IsSearching, RandomLeft(100, 1000), 2500);
+    Result := SleepUntil(not Self.IsSearching(), RandomLeft(100, 1000), 2500);
   end else
     Result := True;
 end;
 
 function TRSBank.Search(Text: String): Boolean;
 begin
-  if not Self.StopSearching() then
-    Exit;
+  // check if already searched
+  if Self.IsSearching() then
+  begin
+    if Chat.AnswerQuery('Show items whose names', Text) then
+      Exit(True);
+    if (Self.GetCurrentSearch() = Text) then
+      Exit(True);
+  end;
 
+  if Self.StopSearching() then
+  begin
+    Self.ElementSearch.Click();
 
+    Result := SleepUntil(Chat.AnswerQuery('Show items whose names', Text), 100, Random(2000, 3000));
+  end;
 end;
 
 procedure TRSBank.Setup;
@@ -130,20 +158,20 @@ begin
   Self.ItemArea.X2 -= 62;
   Self.ItemArea.Y2 -= 43;
 
-  Self.ElementSwap             := TRSInterfaceElement.Create(Self.Bounds, 'ElementSwap', [5, 5, 49, 21, True]);
-  Self.ElementQuantityX        := TRSInterfaceElement.Create(Self.Bounds, 'ElementQuantityX', [281, 6, 23, 20, True]);
-  Self.ElementQuantityAll      := TRSInterfaceElement.Create(Self.Bounds, 'ElementQuantityAll', [305, 6, 24, 20, True]);
-  Self.ElementQuantity5        := TRSInterfaceElement.Create(Self.Bounds, 'ElementQuantity5', [230, 6, 24, 20, True]);
-  Self.ElementQuantity10       := TRSInterfaceElement.Create(Self.Bounds, 'ElementQuantity10', [255, 6, 24, 20, True]);
-  Self.ElementQuantity1        := TRSInterfaceElement.Create(Self.Bounds, 'ElementQuantity1', [205, 5, 24, 21, True]);
-  Self.ElementWithdrawItem     := TRSInterfaceElement.Create(Self.Bounds, 'ElementWithdrawItem', [105, 5, 49, 21, True]);
-  Self.ElementInsert           := TRSInterfaceElement.Create(Self.Bounds, 'ElementInsert', [55, 5, 49, 21, True]);
-  Self.ElementWithdrawNote     := TRSInterfaceElement.Create(Self.Bounds, 'ElementWithdrawNote', [155, 5, 49, 21, True]);
-  Self.ElementPlaceholders     := TRSInterfaceElement.Create(Self.Bounds, 'ElementPlaceholders', [331, 474, 35, 35, False]);
-  Self.ElementSearch           := TRSInterfaceElement.Create(Self.Bounds, 'ElementSearch', [370, 474, 35, 35, False]);
-  Self.ElementDepositInv       := TRSInterfaceElement.Create(Self.Bounds, 'ElementDepositInv', [409, 474, 35, 35, False]);
-  Self.ElementDepositWorn      := TRSInterfaceElement.Create(Self.Bounds, 'ElementDepositWorn', [446, 474, 35, 35, False]);
-  Self.ElementClose            := TRSInterfaceElement.Create(Self.Bounds, 'ElementClose', [460, 7, 20, 20, False]);
+  Self.ElementSwap         := TRSInterfaceElement.Create(Self.Bounds, 'ElementSwap', [5, 5, 49, 21, True]);
+  Self.ElementQuantityX    := TRSInterfaceElement.Create(Self.Bounds, 'ElementQuantityX', [281, 6, 23, 20, True]);
+  Self.ElementQuantityAll  := TRSInterfaceElement.Create(Self.Bounds, 'ElementQuantityAll', [305, 6, 24, 20, True]);
+  Self.ElementQuantity5    := TRSInterfaceElement.Create(Self.Bounds, 'ElementQuantity5', [230, 6, 24, 20, True]);
+  Self.ElementQuantity10   := TRSInterfaceElement.Create(Self.Bounds, 'ElementQuantity10', [255, 6, 24, 20, True]);
+  Self.ElementQuantity1    := TRSInterfaceElement.Create(Self.Bounds, 'ElementQuantity1', [205, 5, 24, 21, True]);
+  Self.ElementWithdrawItem := TRSInterfaceElement.Create(Self.Bounds, 'ElementWithdrawItem', [105, 5, 49, 21, True]);
+  Self.ElementInsert       := TRSInterfaceElement.Create(Self.Bounds, 'ElementInsert', [55, 5, 49, 21, True]);
+  Self.ElementWithdrawNote := TRSInterfaceElement.Create(Self.Bounds, 'ElementWithdrawNote', [155, 5, 49, 21, True]);
+  Self.ElementPlaceholders := TRSInterfaceElement.Create(Self.Bounds, 'ElementPlaceholders', [331, 6, 35, 35, True]);
+  Self.ElementSearch       := TRSInterfaceElement.Create(Self.Bounds, 'ElementSearch', [370, 6, 35, 35, True]);
+  Self.ElementDepositInv   := TRSInterfaceElement.Create(Self.Bounds, 'ElementDepositInv', [409, 6, 35, 35, True]);
+  Self.ElementDepositWorn  := TRSInterfaceElement.Create(Self.Bounds, 'ElementDepositWorn', [446, 6, 35, 35, True]);
+  Self.ElementClose        := TRSInterfaceElement.Create(Self.Bounds, 'ElementClose', [460, 7, 20, 20, False]);
 end;
 
 var

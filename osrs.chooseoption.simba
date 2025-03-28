@@ -58,7 +58,7 @@ begin
         Exit;
       end;
 
-      Result[I].Text := OCR.RecognizeStaticInvert(B, FONT_BOLD_SHADOW, [4674653, 0]);
+      Result[I].Text := OCR.RecognizeStaticInvert(B, FONT_BOLD_SHADOW, [4674653, 0], 0);
       Result[I].Bounds := B;
     end;
   end;

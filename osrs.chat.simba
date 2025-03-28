@@ -109,9 +109,57 @@ begin
   Result := OCR.RecognizeLines(Self.Bounds, FONT_BOLD, [0], 1).Join(' ');
 end;
 
-function TRSChat.AnswerQuery(Query, Answer: String): Boolean;
+function TRSChat.HasQuery(SubString: String): Boolean;
 begin
+  Result := SubString in Self.GetQuery();
+end;
 
+function TRSChat.AnswerQuery(Query, Answer: String): Boolean;
+
+  function CurrentAnswer: String;
+  begin
+    Result := OCR.Recognize(Self.Bounds, FONT_BOLD, [$7F0000], 1);
+  end;
+
+  function EraseAnswer: Boolean;
+  var
+    Timeout: UInt64;
+  begin
+    if (CurrentAnswer() = '*') then
+      Exit(True);
+
+    Timeout := GetTickCount() + 2000;
+    while (Timeout > GetTickCount()) and (CurrentAnswer() <> '*') do
+    begin
+      Target.KeyPress(EKeyCode.BACK);
+
+      Sleep(RandomLeft(0, 100));
+    end;
+    Result := CurrentAnswer() = '*';
+  end;
+
+var
+  StartingQuery: String;
+  Curr: String;
+begin
+  StartingQuery := Self.GetQuery();
+
+  if (Query in StartingQuery) then
+  begin
+    Curr := CurrentAnswer();
+    if (Curr = Answer + '*') then
+      Target.KeyPress(EKeyCode.RETURN)
+    else
+    begin
+      if (not EraseAnswer()) then
+        Exit;
+
+      Target.KeySend(Answer);
+      Target.KeyPress(EKeyCode.RETURN);
+    end;
+
+    Result := SleepUntil(Self.GetQuery() <> StartingQuery, 100, RandomLeft(2000, 3000));
+  end;
 end;
 
 procedure TRSChat.Setup;

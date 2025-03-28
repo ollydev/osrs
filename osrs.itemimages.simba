@@ -114,7 +114,6 @@ begin
   AlignedTemplate.Free();
 end;
 
-
 procedure TRSItemImages.Setup(ZipFile, NamesFile: String);
 
   function StrToIntArray(Value: String): TIntegerArray; static;

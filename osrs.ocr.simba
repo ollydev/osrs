@@ -11,7 +11,6 @@ type
 var
   OCR: TRSOCR;
 
-var
   FONT_PLAIN_11:    TPixelFont := OCR.Engine.LoadFont(OCR.FONTS_PATH + 'Plain 11', 4);
   FONT_PLAIN_12:    TPixelFont := OCR.Engine.LoadFont(OCR.FONTS_PATH + 'Plain 12', 4);
   FONT_BOLD:        TPixelFont := OCR.Engine.LoadFont(OCR.FONTS_PATH + 'Bold 12', 4);
@@ -29,12 +28,12 @@ begin
   img.Free();
 end;
 
-function TRSOCR.RecognizeStaticInvert(Bounds: TBox; Font: TPixelFont; Colors: TColorArray): String; overload;
+function TRSOCR.RecognizeStaticInvert(Bounds: TBox; Font: TPixelFont; Colors: TColorArray; Tol: Integer): String; overload;
 var
   img: TImage;
 begin
   img := TImage.CreateFromTarget(Bounds);
-  img.ReplaceColorBinary(True, Colors);
+  img.ReplaceColorBinary(True, Colors, Tol);
   Result := Self.Engine.Recognize(img, Font, [0,0]);
   img.Free();
 end;
@@ -104,11 +103,28 @@ var
 begin
   for I := 0 to High(Colors) do
   begin
-    Text := OCR.Recognize(Area.Expand(1), FONT_PLAIN_11, [Colors[I]], 0);
+    Text := OCR.Recognize(Area, FONT_PLAIN_11, [Colors[I]], 0);
     if Text.IsInteger then
       Exit(Text.ToInt() * Multipliers[I]);
   end;
   Result := -1;
+end;
+
+function ClickText(Text: String; Color: TColor; Tolerance: Single; Font: TPixelFont; Area: TBox; MinMatch: Single = 1.00): Boolean;
+var
+  Match: Single;
+  B: TBox;
+begin
+  Match := OCR.Locate(Area, Text, [Color], Tolerance, Font);
+
+  if (Match >= MinMatch) then
+  begin
+    B := OCR.Engine.Matches[0].Bounds;
+    B := B.Offset(Area.TopLeft);
+
+    Target.MouseMove(B);
+    Target.MouseClick(EMouseButton.LEFT);
+  end;
 end;
 
 

@@ -83,7 +83,7 @@ end;
 
 procedure TRSInterfaceBuilder.OnFormClose(Sender: TObject; var CloseAction: ELazFormCloseAction);
 begin
-  Self.PrintElements(nil);
+  Self.DoPrintElements(nil);
 end;
 
 procedure TRSInterfaceBuilder.DoInterfaceMenuClick(Sender: TObject);
@@ -139,7 +139,7 @@ begin
   Self.OnUpdateImageButtonClick(nil);
 end;
 
-procedure TRSInterfaceBuilder.PrintElements(Sender: TObject);
+procedure TRSInterfaceBuilder.DoPrintElements(Sender: TObject);
 var
   I, MaxLen: Integer;
   Shape: TShapeBoxShape;
@@ -218,7 +218,7 @@ begin
     Self.ShapeBox.NewButton.PopupMenu.Items.Item[0].Caption := 'Add Element';
     Self.ShapeBox.ClearButton.Caption := 'Clear';
     Self.ShapeBox.PrintButton.Caption := 'Print';
-    Self.ShapeBox.PrintButton.OnClick := @Self.PrintElements;
+    Self.ShapeBox.PrintButton.OnClick := @Self.DoPrintElements;
 
     Self.ShapeBox.SetImage(TImage.CreateFromTarget());
 

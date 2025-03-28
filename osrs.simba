@@ -5,6 +5,9 @@
 {$IFNDEF INCLUDED_ITEMIMAGES}           {$I osrs.itemimages}
 {$IFNDEF INCLUDED_INTERFACE}            {$I osrs.interface}
 {$IFNDEF INCLUDED_GAMETABS}             {$I osrs.gametabs}
+{$IFNDEF INCLUDED_CHATTABS}             {$I osrs.chattabs}
+{$IFNDEF INCLUDED_CHAT}                 {$I osrs.chat}
+{$IFNDEF INCLUDED_MAINSCREEN}           {$I osrs.mainscreen}
 {$IFNDEF INCLUDED_BANKPIN}              {$I osrs.bankpin}
 {$IFNDEF INCLUDED_BANK}                 {$I osrs.bank}
 {$IFNDEF INCLUDED_INVENTORY}            {$I osrs.inventory}
@@ -14,10 +17,7 @@
 {$IFNDEF INCLUDED_XPBAR}                {$I osrs.xpbar}
 {$IFNDEF INCLUDED_LOGIN}                {$I osrs.login}
 {$IFNDEF INCLUDED_LOGOUT}               {$I osrs.logout}
-{$IFNDEF INCLUDED_CHATTABS}             {$I osrs.chattabs}
-{$IFNDEF INCLUDED_CHAT}                 {$I osrs.chat}
 {$IFNDEF INCLUDED_OPTIONS}              {$I osrs.options}
-{$IFNDEF INCLUDED_MAINSCREEN}           {$I osrs.mainscreen}
 {$IFNDEF INCLUDED_SETUP}                {$I osrs.setup}
 {$ENDIF}
 {$ENDIF}

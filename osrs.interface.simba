@@ -12,6 +12,11 @@ begin
   Result := OCR.LocateInvert([Bounds.X1 + 70, Bounds.Y1 + 10, Bounds.X2 - 70, Bounds.Y1 + 26], Text, [$344049,0], 2, FONT_BOLD) >= MinMatch;
 end;
 
+function TRSInterfaceUtils.ReadTitle(Bounds: TBox): String;
+begin
+  Result := OCR.RecognizeStaticInvert([Bounds.X1 + 70, Bounds.Y1 + 10, Bounds.X2 - 70, Bounds.Y1 + 26], FONT_BOLD, [$344049,0], 2);
+end;
+
 function TRSInterfaceUtils.BoundsFromTopLeft(Offset: TPoint; Width, Height: Integer): TBox;
 begin
   Result.X1 := Offset.X;
@@ -177,6 +182,23 @@ procedure TRSInterfaceElement.Click(Button: EMouseButton = EMouseButton.LEFT);
 begin
   Target.MouseMove(Self.Bounds);
   Target.MouseClick(Button);
+end;
+
+procedure TRSInterfaceElement.Hover;
+begin
+  Target.MouseMove(Self.Bounds);
+end;
+
+function TRSInterfaceElement.ButtonEnabled: Boolean;
+const
+  RED: TColorTolerance = [$1D2086, 0.599, EColorSpace.HSL, [1.413, 1.413, 0.176]];
+begin
+  Result := Target.CountColor(RED, Self.Bounds) > Self.Bounds.Area div 4;
+end;
+
+function TRSInterfaceElement.ButtonToggle(Enabled: Boolean): Boolean;
+begin
+
 end;
 
 function TRSInterfaceUtils.ItemFind(ItemNames: TStringArray; Boxes: TBoxArray; MaxToFind: Integer = -1): TIntegerArray; overload;

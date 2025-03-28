@@ -36,6 +36,7 @@ begin
   if Self.ElementExistingUser.HasText('Existing User', [Colors.WHITE], 0, FONT_BOLD) then
   begin
     Self.ElementExistingUser.Click(EMouseButton.LEFT);
+
     Exit(True);
   end;
 end;
@@ -49,22 +50,23 @@ begin
     Exit(True);
 
   // Move caret
-  //while not SleepUntil(InterfaceUtils.ElementHasColor(Element, Self.Bounds, $00FFFF, 15), 100, RandomLeft(800, 1600)) do
-  //begin
-  //  if not Self.IsOpen() then
-  //    Exit(False);
-  //
-  //  Target.KeyPress(EKeyCode.TAB);
-  //end;
+  while not SleepUntil(Element.HasColor($00FFFF, 15), 100, RandomLeft(800, 1600)) do
+  begin
+    if not Self.IsOpen() then
+      Exit(False);
+
+    Target.KeyPress(EKeyCode.TAB);
+  end;
 
   // Erase field
-  //while InterfaceUtils.ElementHasColor(Element, Self.Bounds, $FFFFFF) do
-  //begin
-  //  if not Self.IsOpen() then
-  //    Exit(False);
-  //
-  //  Target.KeyPress(EKeyCode.BACK);
-  //end;
+  while Element.HasColor($FFFFFF) do
+  begin
+    if not Self.IsOpen() then
+      Exit(False);
+
+    Target.KeyPress(EKeyCode.BACK);
+    Sleep(RandomLeft(0, 50));
+  end;
   Target.KeySend(Details);
 
   Result := True;
@@ -77,8 +79,8 @@ begin
   T := GetTickCount() + 3500;
   while (T > GetTickCount()) do
   begin
-    //if ClickText('CLICK HERE TO PLAY', Colors.WHITE, FONT_BOLD_12) then
-    //  Break;
+    if ClickText('CLICK HERE TO PLAY', Colors.WHITE, 0, FONT_BOLD, Self.Bounds) then
+      Break;
     Sleep(100);
   end;
 
