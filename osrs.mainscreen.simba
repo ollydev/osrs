@@ -39,26 +39,11 @@ begin
   img.Free();
 end;
 
-function TRSMainScreen.GetUpTextSimilarity(Target: String): Double;
-var
-  Text: String;
+function TRSMainScreen.IsUpText(Target: String; Similarity: Single = 0.9): Boolean;
 begin
-  Text := Self.GetUpText();
-  if ('/' in Text) then
-    Text := Text.Before('/');
-
-  Result := Text.Similarity(Target);
+  Result := SleepUntil(Target.Similarity(Copy(Self.GetUpText(), 1, Length(Target))) >= Similarity, 10, 100);
 end;
 
-function TRSMainScreen.IsUpText(Target: String; Similarity: Double): Boolean; overload;
-begin
-  Result := Self.GetUpTextSimilarity(Target) >= Similarity;
-end;
-
-function TRSMainScreen.IsUpText(SubStrings: TStringArray): Boolean; overload;
-begin
-  Result := Self.GetUpText().ContainsAny(SubStrings, True);
-end;
 
 var
   MainScreen: TRSMainScreen;

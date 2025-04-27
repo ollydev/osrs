@@ -92,7 +92,7 @@ begin
   northarr := Target.FindColor(1911089, 1, Self.CompassBounds);
   north    := northarr.ExtractDist(Self.CompassCenter, 0, 18).Mean();
 
-  southarr := dials.ExtractDist(north, 20, 9999);
+  southarr := dials.ExtractDist(north, 22.5, 9999);
   south    := southarr.FurthestPoint(Self.CompassCenter);
 
   dials  := dials.ExcludePoints(southarr);

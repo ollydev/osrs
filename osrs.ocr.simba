@@ -124,6 +124,8 @@ begin
 
     Target.MouseMove(B);
     Target.MouseClick(EMouseButton.LEFT);
+
+    Result := True;
   end;
 end;
 
