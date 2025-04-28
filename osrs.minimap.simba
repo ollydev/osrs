@@ -120,6 +120,11 @@ begin
   Self.CompassCache.Deg := Result;
 end;
 
+function TRSMinimap.GetCompassRadians: Single;
+begin
+  Result := DegToRad(Self.GetCompassAngle());
+end;
+
 function TRSMinimap.GetDots(Dots: EMinimapDots): TPointArray; overload;
 var
   Dot: EMinimapDot;

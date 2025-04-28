@@ -1,0 +1,165 @@
+{$DEFINE INCLUDED_PROJECTOR}
+{$include_once osrs.simba}
+
+type
+  TRSProjector = record
+    const FIXED_Y_LOOK = -25.5;
+    const FIXED_SCALE_MIN = 0.80;
+    const FIXED_SCALE_MAX = 6.32;
+
+    const RESIZABLE_Y_LOOK = -21;
+    const RESIZABLE_SCALE_MIN = 0.635;
+    const RESIZABLE_SCALE_MAX = 4.90;
+
+    // generated with TRSProjector.GetZoomCurve
+    const ZOOM_CURVE = [
+      0.00000, 0.00267, 0.00542, 0.00825, 0.01116, 0.01416, 0.01724, 0.02041, 0.02366, 0.02701, 0.03044, 0.03396, 0.03758,
+      0.04128, 0.04509, 0.04898, 0.05298, 0.05707, 0.06126, 0.06556, 0.06995, 0.07445, 0.07905, 0.08376, 0.08858, 0.09351,
+      0.09855, 0.10370, 0.10897, 0.11435, 0.11986, 0.12548, 0.13122, 0.13709, 0.14309, 0.14921, 0.15547, 0.16185, 0.16838,
+      0.17503, 0.18183, 0.18877, 0.19586, 0.20309, 0.21047, 0.21800, 0.22569, 0.23354, 0.24155, 0.24972, 0.25806, 0.26658,
+      0.27526, 0.28412, 0.29317, 0.30240, 0.31182, 0.32143, 0.33124, 0.34125, 0.35147, 0.36190, 0.37254, 0.38341, 0.39449,
+      0.40581, 0.41737, 0.42917, 0.44121, 0.45351, 0.46607, 0.47890, 0.49200, 0.50538, 0.51905, 0.53302, 0.54729, 0.56187,
+      0.57677, 0.59200, 0.60757, 0.62349, 0.63976, 0.65640, 0.67342, 0.69082, 0.70862, 0.72682, 0.74544, 0.76448, 0.78395,
+      0.80386, 0.82421, 0.84501, 0.86623, 0.88788, 0.90992, 0.93229, 0.95491, 0.97760, 1.00000
+    ];
+
+    Zoom: Integer;
+  end;
+
+// OSRS zooms at a non standard curve for this projector
+function TRSProjector.GetZoomCurve(Level: Integer): Single; static;
+var
+  x,y,p: Single;
+begin
+  y := 1 - (Ln(100-level+2.5)-Ln(2.5)) / (Ln(100+2.5)-Ln(2.5));
+  x := 1 - (Ln(100-level/1.32)-Ln(100-100/1.32)) / (Ln(100)-Ln(100-100/1.32));
+  p := level/100;
+  Result := x * (p) + y * (1-p);
+end;
+
+function TRSProjector.MMToMS(Coords: TVector3Array; Angle: Single): TPointArray;
+var
+  I: Int32;
+  Rotation: TVector3;
+  ViewMatrix, ProjMatrix, WorldMatrix, TransMatrix: TMatrix4;
+  ScaleMin, ScaleMax: Single;
+  Curve, Scale: Single;
+begin
+  for I := 0 to High(Coords) do
+    Coords[I] := [Coords[I].X - Minimap.Center.X, Minimap.Center.Y - Coords[I].Y, Coords[I].Z];
+  Rotation := [0, 0, PI*2 - Angle];
+
+  case RSClient.ClientMode of
+    ERSClientMode.FIXED:
+      begin
+        ScaleMin   := Self.FIXED_SCALE_MIN * MainScreen.Bounds.Height / 503;
+        ScaleMax   := Self.FIXED_SCALE_MAX * MainScreen.Bounds.Height / 503;
+        ViewMatrix := TMatrix4.LookAtRH([0, Self.FIXED_Y_LOOK, 61], [0, 0, 1.3], TVector3.UNIT_Y);
+      end;
+
+    ERSClientMode.RESIZABLE_CLASSIC,
+    ERSClientMode.RESIZABLE_MODERN:
+      begin
+        ScaleMin   := Self.RESIZABLE_SCALE_MIN * MainScreen.Bounds.Height / 503;
+        ScaleMax   := Self.RESIZABLE_SCALE_MAX * MainScreen.Bounds.Height / 503;
+        ViewMatrix := TMatrix4.LookAtRH([0, Self.RESIZABLE_Y_LOOK, 61], [0, 0, 1.3], TVector3.UNIT_Y);
+      end;
+  end;
+
+  ProjMatrix  := TMatrix4.PerspectiveFovRH(SQRT_2, 765 / 503, 0.01, 1.0);
+  WorldMatrix := TMatrix4.RotationYawPitchRoll(Rotation.Y, Rotation.X, Rotation.Z) * TMatrix4.IDENTITY;
+  TransMatrix := WorldMatrix * ViewMatrix * ProjMatrix;
+
+  Curve := Self.ZOOM_CURVE[Self.Zoom];
+  Scale := ScaleMin + Curve * (ScaleMax - ScaleMin);
+
+  SetLength(Result, Length(Coords));
+  for I := 0 to High(Coords) do
+    with Coords[I].Transform(TransMatrix) do
+      Result[I] := [
+        Round((+X * 513 * Scale) + MainScreen.Bounds.Center.X),
+        Round((-Y * 335 * Scale) + MainScreen.Bounds.Center.Y + (Curve * 24)) // y shift
+      ];
+end;
+
+procedure TRSProjector.Debug(Radius: Integer = 15; Angle: Single = 0);
+var
+  X, Y: Integer;
+  Arr: TVector3Array;
+  TPA: TPointArray;
+  Tiles: TQuadArray;
+  Image: TImage;
+  I: Integer;
+begin
+  for X := Minimap.Center.X - Radius * 4 to Minimap.Center.X + Radius * 4 with 4 do
+    for Y := Minimap.Center.Y - Radius * 4 to Minimap.Center.Y + Radius * 4 with 4 do
+    begin
+      Arr += [X-2, Y-2];
+      Arr += [X+2, Y-2];
+      Arr += [X+2, Y+2];
+      Arr += [X-2, Y+2];
+    end;
+
+  TPA := Self.MMToMS(Arr, Angle);
+  for I := 0 to High(TPA) with 4 do
+    Tiles += [TPA[I], TPA[I+1], TPA[I+2], TPA[I+3]];
+
+  Image := TImage.CreateFromTarget();
+  Image.DrawColor := Colors.RED;
+  Image.DrawQuadArray(Tiles, False);
+  Image.Show();
+  Image.Free();
+end;
+
+var
+  RSProjector: TRSProjector;
+
+function TRSMinimap.VecToMSTile(Vec: TVector3; sizeW, sizeH: Integer): TQuad; overload;
+var
+  TopLeft, BottomRight: TVector3;
+  Arr: TPointArray;
+begin
+  Vec         := Vec.Rotate(-Minimap.GetCompassRadians(), Minimap.Center.X, Minimap.Center.Y);
+  TopLeft     := Vec + [-sizeW, -sizeH];
+  BottomRight := Vec + [sizeW, sizeH];
+
+  Arr := RSProjector.MMToMS([
+    [TopLeft.X,     TopLeft.Y,     Vec.Z],
+    [BottomRight.X, TopLeft.Y,     Vec.Z],
+    [BottomRight.X, BottomRight.Y, Vec.Z],
+    [TopLeft.X,     BottomRight.Y, Vec.Z]],
+    Minimap.GetCompassRadians()
+  );
+
+  Result := [Arr[0], Arr[1], Arr[2], Arr[3]];
+end;
+
+function TRSMinimap.VecToMSTile(Vec: TVector3; Size: Integer = 1): TQuad; overload;
+begin
+  Result := Self.VecToMSTile(Vec, Size, Size);
+end;
+
+function TRSMinimap.PointToMSTile(Point: TPoint; sizeW, sizeH: Integer): TQuad; overload;
+var
+  TopLeft, BottomRight: TPoint;
+  Arr: TPointArray;
+begin
+  Point := Point.Rotate(-Minimap.GetCompassRadians(), Minimap.Center);
+  TopLeft     := Point + [-sizeW, -sizeH];
+  BottomRight := Point + [sizeW, sizeH];
+
+  Arr := RSProjector.MMToMS([
+    [TopLeft.X,     TopLeft.Y    ],
+    [BottomRight.X, TopLeft.Y    ],
+    [BottomRight.X, BottomRight.Y],
+    [TopLeft.X,     BottomRight.Y]],
+    Minimap.GetCompassRadians()
+  );
+
+  Result := [Arr[0], Arr[1], Arr[2], Arr[3]];
+end;
+
+function TRSMinimap.PointToMSTile(Point: TPoint; Size: Integer = 1): TQuad; overload;
+begin
+  Result := Self.PointToMSTile(Point, Size, Size);
+end;
