@@ -1,4 +1,4 @@
-{$DEFINE INCLUDED_LOGOUT}
+{$DEFINE INCLUDED_RSLOGOUT}
 {$include_once osrs.simba}
 
 type
@@ -13,12 +13,12 @@ type
 
 function TRSLogout.IsOpen: Boolean;
 begin
-  Result := GameTabs.IsCurrentTab(ERSGameTab.LOGOUT);
+  Result := RSGameTabs.IsCurrentTab(ERSGameTab.LOGOUT);
 end;
 
 function TRSLogout.Open: Boolean;
 begin
-  Result := GameTabs.Open(ERSGameTab.LOGOUT);
+  Result := RSGameTabs.Open(ERSGameTab.LOGOUT);
 end;
 
 function TRSLogout.OpenWorldSwitcher: Boolean;
@@ -78,7 +78,7 @@ end;
 
 procedure TRSLogout.Setup;
 begin
-  Self.Bounds := GameTabs.TabBounds;
+  Self.Bounds := RSGameTabs.TabBounds;
 
   Self.ElementCurrentWorld       := TRSInterfaceElement.Create(Self.Bounds, 'ElementCurrentWorld', [20, 2, 147, 18, False]);
   Self.ElementLogout             := TRSInterfaceElement.Create(Self.Bounds, 'ElementLogout', [29, 216, 131, 23, False]);
@@ -87,4 +87,4 @@ begin
 end;
 
 var
-  Logout: TRSLogout;
+  RSLogout: TRSLogout;

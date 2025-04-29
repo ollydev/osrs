@@ -1,10 +1,10 @@
-{$DEFINE INCLUDED_COLORS}
+{$DEFINE INCLUDED_RSCOLORS}
 {$include_once osrs.simba}
 
 type
   RSColors = record
-    const ITEM_SHADOW = $202030;
-    const ITEM_BORDER = $010000;
+    const ITEM_SHADOW       = $202030;
+    const ITEM_BORDER       = $010000;
     const ITEM_BORDER_WHITE = $FFFFFF;
 
     const ITEM_TEXT_YELLOW = $00FFFF;
@@ -12,7 +12,7 @@ type
     const ITEM_TEXT_GREEN  = $80FF00;
 
     const TEXT_ORANGE = $1F98FF;
-    const TEXT_GREY = $9F9F9F;
+    const TEXT_GREY   = $9F9F9F;
   end;
 
 function FindItemBorder(Area: TBox): TPointArray;

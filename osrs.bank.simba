@@ -1,7 +1,22 @@
-{$DEFINE INCLUDED_BANK}
+{$DEFINE INCLUDED_RSBANK}
 {$include_once osrs.simba}
 
 type
+  ERSBankQuantity = enum(
+    UNKNOWN,
+    ONE,
+    FIVE,
+    TEN,
+    CUSTOM,
+    ALL
+  );
+
+  ERSBankWithdrawMode = enum(
+    UNKNOWN,
+    ITEM,
+    NOTE
+  );
+
   TRSBank = record
     ElementSwap: TRSInterfaceElement;
     ElementQuantityX: TRSInterfaceElement;
@@ -24,17 +39,32 @@ type
 
 function TRSBank.IsTitle(Text: String): Boolean;
 begin
-  Result := InterfaceUtils.IsTitle(Self.Bounds, Text);
+  Result := RSInterfaceUtils.IsTitle(Self.Bounds, Text);
 end;
 
 function TRSBank.ReadTitle: String;
 begin
-  Result := InterfaceUtils.ReadTitle(Self.Bounds);
+  Result := RSInterfaceUtils.ReadTitle(Self.Bounds);
 end;
 
 function TRSBank.IsOpen: Boolean;
 begin
   Result := Self.IsTitle('Bank') or Self.IsTitle('Tab') or Self.IsTitle('Showing') or Self.IsTitle('Equip');
+end;
+
+function TRSBank.GetQuantity: ERSBankQuantity;
+begin
+  if Self.ElementQuantity1.ButtonEnabled()   then Exit(ERSBankQuantity.ONE);
+  if Self.ElementQuantity5.ButtonEnabled()   then Exit(ERSBankQuantity.FIVE);
+  if Self.ElementQuantity10.ButtonEnabled()  then Exit(ERSBankQuantity.TEN);
+  if Self.ElementQuantityX.ButtonEnabled()   then Exit(ERSBankQuantity.CUSTOM);
+  if Self.ElementQuantityAll.ButtonEnabled() then Exit(ERSBankQuantity.ALL);
+end;
+
+function TRSBank.GetWithdraw: ERSBankWithdrawMode;
+begin
+  if Self.ElementWithdrawItem.ButtonEnabled() then Exit(ERSBankWithdrawMode.ITEM);
+  if Self.ElementWithdrawNote.ButtonEnabled() then Exit(ERSBankWithdrawMode.NOTE);
 end;
 
 function TRSBank.FindItemBoxes: TBoxArray;
@@ -58,47 +88,55 @@ begin
   end;
 end;
 
-function TRSBank.FindItem(ItemName: String; out ItemBox: TBox): Boolean;
+function TRSBank.ItemFind(ItemName: String; out ItemBox: TBox): Boolean;
 var
   Boxes: TBoxArray;
   Arr: TIntegerArray;
 begin
   Boxes := Self.FindItemBoxes();
-  Arr := InterfaceUtils.ItemFind(ItemName, Boxes, 1);
+  Arr := RSInterfaceUtils.ItemFind(ItemName, Boxes, 1);
   Result := Length(Arr) = 1;
   if Result then
     ItemBox := Boxes[Arr[0]];
 end;
 
-function TRSBank.MouseItem(ItemName: String): Boolean;
+function TRSBank.ItemFind(ItemName: String): Boolean; overload;
+var
+  _: TBox;
+begin
+  Result := Self.ItemFind(ItemName, _);
+end;
+
+function TRSBank.ItemMouse(ItemName: String): Boolean;
 var
   ItemBox: TBox;
 begin
-  Result := Self.FindItem(ItemName, ItemBox);
+  Result := Self.ItemFind(ItemName, ItemBox);
   if Result then
     Target.MouseMove(ItemBox);
 end;
 
-function TRSBank.ClickItem(ItemName: String; Button: EMouseButton): Boolean;
+function TRSBank.ItemClick(ItemName: String; Button: EMouseButton): Boolean;
 begin
-  Result := Self.MouseItem(ItemName);
+  Result := Self.ItemMouse(ItemName);
   if Result then
     Target.MouseClick(Button);
 end;
 
-function TRSBank.CountItemStack(ItemName: String): Integer;
+function TRSBank.ItemCountStack(ItemName: String): Integer;
 var
   ItemBox: TBox;
 begin
-  if Self.FindItem(ItemName, ItemBox) then
+  if Self.ItemFind(ItemName, ItemBox) then
     Result := CountItemStack(ItemBox);
 end;
 
-function TRSBank.HasItem(ItemName: String): Boolean;
-var
-  ItemBox: TBox;
+function TRSBank.ItemWithdraw(ItemName: String; Quantity: Integer): Boolean;
 begin
-  Result := Self.FindItem(ItemName, ItemBox);
+  if Self.ItemClick(ItemName, EMouseButton.RIGHT) then
+  begin
+    RSMenu.Select('Withdraw-' + ToString(Quantity) + ' ');
+  end;
 end;
 
 function TRSBank.IsSearching: Boolean;
@@ -110,12 +148,25 @@ function TRSBank.GetCurrentSearch: String;
 var
   Text: String;
 begin
-  if (MainScreen.GetUpText() <> 'Search') then
+  if (RSMainScreen.GetUpText() <> 'Search') then
     Self.ElementSearch.Hover();
 
   Text := Self.ReadTitle();
   if Text.StartsWith('Showing items: ') then
     Result := Text.After('Showing items: ');
+end;
+
+function TRSBank.DepositAll: Boolean;
+begin
+  if (RSInventory.CountUsedSlots = 0) then
+    Exit(True);
+
+  if Self.IsOpen() then
+  begin
+    Self.ElementDepositInv.Click();
+
+    Result := SleepUntil(RSInventory.IsEmpty(), RandomLeft(100, 1000), 2000);
+  end;
 end;
 
 function TRSBank.StopSearching: Boolean;
@@ -134,7 +185,7 @@ begin
   // check if already searched
   if Self.IsSearching() then
   begin
-    if Chat.AnswerQuery('Show items whose names', Text) then
+    if RSChat.AnswerQuery('Show items whose names', Text) then
       Exit(True);
     if (Self.GetCurrentSearch() = Text) then
       Exit(True);
@@ -144,13 +195,13 @@ begin
   begin
     Self.ElementSearch.Click();
 
-    Result := SleepUntil(Chat.AnswerQuery('Show items whose names', Text), 100, Random(2000, 3000));
+    Result := SleepUntil(RSChat.AnswerQuery('Show items whose names', Text), 100, Random(2000, 3000));
   end;
 end;
 
 procedure TRSBank.Setup;
 begin
-  Self.Bounds := InterfaceUtils.BoundsFromCenter(488, 800);
+  Self.Bounds := RSInterfaceUtils.BoundsFromCenter(488, 800);
 
   Self.ItemArea := Self.Bounds;
   Self.ItemArea.X1 += 57;
@@ -175,4 +226,12 @@ begin
 end;
 
 var
-  Bank: TRSBank;
+  RSBank: TRSBank;
+
+function TRSInventory.IsOpen: Boolean; override;
+begin
+  if RSBank.IsOpen() then
+    Result := True
+  else
+    Result := inherited;
+end;

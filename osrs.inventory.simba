@@ -1,4 +1,4 @@
-{$DEFINE INCLUDED_INVENTORY}
+{$DEFINE INCLUDED_RSINVENTORY}
 {$include_once osrs.simba}
 
 type
@@ -9,12 +9,12 @@ type
 
 function TRSInventory.IsOpen: Boolean;
 begin
-  Result := GameTabs.IsCurrentTab(ERSGameTab.INVENTORY);
+  Result := RSGameTabs.IsCurrentTab(ERSGameTab.INVENTORY);
 end;
 
 function TRSInventory.Open: Boolean;
 begin
-  Result := Self.IsOpen() or GameTabs.Open(ERSGameTab.INVENTORY);
+  Result := Self.IsOpen() or RSGameTabs.Open(ERSGameTab.INVENTORY);
 end;
 
 function TRSInventory.MouseSlot(Index: Integer): Boolean;
@@ -43,7 +43,7 @@ end;
 
 function TRSInventory.IsEmpty: Boolean;
 begin
-  Result := not IsItemIn(Self.Bounds);
+  Result := not IsItemIn(Self.Slots.Merge());
 end;
 
 function TRSInventory.IsFull: Boolean;
@@ -82,7 +82,7 @@ begin
   if not Self.Open() then
     Exit;
 
-  Result := InterfaceUtils.ItemFind(ItemName, Self.Slots);
+  Result := RSInterfaceUtils.ItemFind(ItemName, Self.Slots);
 end;
 
 function TRSInventory.FindAllItems(ItemNames: TStringArray): TIntegerArray;
@@ -90,14 +90,14 @@ begin
   if not Self.Open() then
     Exit;
 
-  Result := InterfaceUtils.ItemFind(ItemNames, Self.Slots);
+  Result := RSInterfaceUtils.ItemFind(ItemNames, Self.Slots);
 end;
 
 function TRSInventory.FindItem(ItemName: String): Integer;
 var
   Arr: TIntegerArray;
 begin
-  Arr := InterfaceUtils.ItemFind(ItemName, Self.Slots, 1);
+  Arr := RSInterfaceUtils.ItemFind(ItemName, Self.Slots, 1);
   if Length(Arr) then
     Result := Arr[0]
   else
@@ -120,7 +120,7 @@ begin
   if not Self.Open() then
     Exit;
 
-  Result := InterfaceUtils.ItemClick(ItemName, Self.Slots, Button);
+  Result := RSInterfaceUtils.ItemClick(ItemName, Self.Slots, Button);
 end;
 
 function TRSInventory.ClickAnyItem(ItemNames: TStringArray; Button: EMouseButton): Boolean;
@@ -128,7 +128,7 @@ begin
   if not Self.Open() then
     Exit;
 
-  Result := InterfaceUtils.ItemClickAny(ItemNames, Self.Slots, Button);
+  Result := RSInterfaceUtils.ItemClickAny(ItemNames, Self.Slots, Button);
 end;
 
 function TRSInventory.CountItem(ItemName: String): Integer;
@@ -166,9 +166,9 @@ end;
 
 procedure TRSInventory.Setup;
 begin
-  Self.Bounds := GameTabs.TabBounds;
+  Self.Bounds := RSGameTabs.TabBounds;
   Self.Slots := TBoxArray.Create([Self.Bounds.X1 + 16, Self.Bounds.Y1 + 9], 4, 7, 35, 31, [7, 5]);
 end;
 
 var
-  Inventory: TRSInventory;
+  RSInventory: TRSInventory;

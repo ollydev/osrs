@@ -1,4 +1,4 @@
-{$DEFINE INCLUDED_LOGIN}
+{$DEFINE INCLUDED_RSLOGIN}
 {$include_once osrs.simba}
 
 type
@@ -109,4 +109,4 @@ begin
 end;
 
 var
-  Login: TRSLogin;
+  RSLogin: TRSLogin;

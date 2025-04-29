@@ -1,0 +1,104 @@
+{$DEFINE INCLUDED_RSMENU}
+{$include_once osrs.simba}
+
+type
+  TRSMenuEntry = record
+    Text: String;
+    Bounds: TBox;
+  end;
+  TRSMenuEntryArray = array of TRSMenuEntry;
+
+  TRSMenu = record
+    const TitleImg: TImage = ImageFromString('IMG:AQAAAGYAAAASAAAAAAAAAP21aQABAAAAIKprAAEAAADI5D8BAAAAAM0CAQABAAAAOIe7BgAAAAAApLsGAAAAADQBAACYAQAAOIe7BgAAAAABAAAAZgAAABIAAAAYAAAAAAAAAAAAAAAAAAAAAwAAABgIEAgICAAAAAEAAAIAAAAAAAAAAAAAAAAAAAAAiVBORw0KGgoAAAANSUhEUgAAAGYAAAASCAIAAAAmDjziAAAAzUlEQVR4nO2U0Q2AMAhE3c4F/HX/NYzxo9oWvAO0mkBqoqTA9Qmd1mXORa1pf9IoS2S0JTLaWmRlaK+ed3X1rdU2RkT1eXjOysarvMoA9TwlG+mmLyAzNH4iC0AWcxAcWfce8fjb0sqRdGSenEpUP5BCVu3xvEs4wE63lcOjtEuTHUwnJuXH4hpspf3iSxZJVkglPCcyRGZJkeKlpFGYPMMohRjwRYpvXdTgSN2hDODtfgUfG1s5EfEWZL8zsEkj671X7BlLZLQNQJaLWhvxdfuwwsTSHQAAAABJRU5ErkJggg==');
+  end;
+
+function TRSMenu.IsOpen(out Bounds: TBox): Boolean; overload;
+var
+  TPA: TPointArray;
+  P: TPoint;
+begin
+  P := Target.FindImage(Self.TitleImg, 0);
+  if (P = [-1,-1]) then
+    Exit;
+
+  // find inner black border
+  TPA := Target.FindColor(Colors.BLACK, 0, [P.X, P.Y + Self.TitleImg.Height, Target.Width - 1, Target.Height - 1]);
+  TPA := TPA.Cluster(1, 1).SortFromFirstPoint(P)[0];
+  Bounds := TPA.Bounds;
+  // ensure tpa TPA is just single pixel box
+  Result := (Bounds.Width*2 + Bounds.Height*2)-4 = Length(TPA);
+
+  // return the full bounds
+  if Result then
+  begin
+    Bounds.X1 -= 1;
+    Bounds.Y1 := P.Y;
+    Bounds.X2 += 1;
+    Bounds.Y2 += 1;
+  end;
+end;
+
+function TRSMenu.IsOpen: Boolean; overload;
+var
+  _: TBox;
+begin
+  Result := Self.IsOpen(_);
+end;
+
+function TRSMenu.GetEntries: TRSMenuEntryArray;
+var
+  I: Integer;
+  Bounds, B: TBox;
+begin
+  if Self.IsOpen(Bounds) then
+  begin
+    Bounds.Y1 += Self.TitleImg.Height + 1;
+    Bounds.X1 += 2;
+    Bounds.X2 -= 2;
+    Bounds.Y2 -= 2;
+
+    SetLength(Result, Bounds.Height div 15);
+    for I := 0 to High(Result) do
+    begin
+      B := [Bounds.X1, Bounds.Y1 + (I * 15), Bounds.X2, Bounds.Y1 + (I * 15) + 15];
+      if (B.Y2 > Bounds.Y2) then
+      begin
+        SetLength(Result, I-1);
+        Exit;
+      end;
+
+      Result[I].Text := RSOCR.RecognizeStaticInvert(B, FONT_BOLD_SHADOW, [4674653, 0], 0);
+      Result[I].Bounds := B;
+    end;
+  end;
+end;
+
+function TRSMenu.Select(Text: String): Boolean;
+var
+  Entries: TRSMenuEntryArray;
+  I: Integer;
+begin
+  Entries := Self.GetEntries();
+  for I := 0 to High(Entries) do
+    if (Text in Entries[I].Text) then
+    begin
+      RSMouse.Click(Entries[I].Bounds, EMouseButton.LEFT);
+      Exit(True);
+    end;
+end;
+
+function TRSMenu.Close: Boolean;
+var
+  Bounds: TBox;
+  Space: TBoxArray;
+begin
+  if not Self.IsOpen(Bounds) then
+    Exit(True);
+
+  Space := Bounds.Expand(5).Invert(Bounds.Expand(50));
+  Target.MouseMove(Space.Random().RandomPoint());
+  Result := SleepUntil(not Self.IsOpen(), RandomLeft(100, 1000), 2000);
+end;
+
+var
+  RSMenu: TRSMenu;

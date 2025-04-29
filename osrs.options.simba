@@ -1,4 +1,4 @@
-{$DEFINE INCLUDED_LOGOUT}
+{$DEFINE INCLUDED_RSLOGOUT}
 {$include_once osrs.simba}
 
 type
@@ -15,12 +15,12 @@ type
 
 function TRSOptionsTab.IsOpen: Boolean;
 begin
-  Result := GameTabs.IsCurrentTab(ERSGameTab.OPTIONS);
+  Result := RSGameTabs.IsCurrentTab(ERSGameTab.OPTIONS);
 end;
 
 function TRSOptionsTab.Open: Boolean;
 begin
-  Result := GameTabs.Open(ERSGameTab.OPTIONS);
+  Result := RSGameTabs.Open(ERSGameTab.OPTIONS);
 end;
 
 function TRSOptionsTab.GetZoom: Integer;
@@ -64,7 +64,7 @@ end;
 
 procedure TRSOptionsTab.Setup;
 begin
-  Self.Bounds := GameTabs.TabBounds;
+  Self.Bounds := RSGameTabs.TabBounds;
 
   Self.ElementZoom       := TRSInterfaceElement.Create(Self.Bounds, 'ElementZoom', [66, 110, 96, 7, False]);
   Self.ElementControlTab := TRSInterfaceElement.Create(Self.Bounds, 'ElementControlTab', [4, 8, 55, 21, False]);
@@ -73,4 +73,4 @@ begin
 end;
 
 var
-  Options: TRSOptionsTab;
+  RSOptions: TRSOptionsTab;

@@ -1,4 +1,4 @@
-{$DEFINE INCLUDED_ITEMIMAGES}
+{$DEFINE INCLUDED_RSITEMIMAGES}
 {$include_once osrs.simba}
 
 type
@@ -135,9 +135,9 @@ begin
 end;
 
 var
-  ItemImages: TRSItemImages;
+  RSItemImages: TRSItemImages;
 
 begin
-  ItemImages.Setup({$MACRO DIR} + 'itemimages\images.zip',
-                   {$MACRO DIR} + 'itemimages\items.txt');
+  RSItemImages.Setup({$MACRO DIR} + 'itemimages\images.zip',
+                     {$MACRO DIR} + 'itemimages\items.txt');
 end;

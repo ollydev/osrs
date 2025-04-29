@@ -1,4 +1,4 @@
-{$DEFINE INCLUDED_INTERFACE}
+{$DEFINE INCLUDED_RSINTERFACE}
 {$include_once osrs.simba}
 
 type
@@ -9,12 +9,12 @@ type
 
 function TRSInterfaceUtils.IsTitle(Bounds: TBox; Text: String; MinMatch: Single = 0.80): Boolean;
 begin
-  Result := OCR.LocateInvert([Bounds.X1 + 70, Bounds.Y1 + 10, Bounds.X2 - 70, Bounds.Y1 + 26], Text, [$344049,0], 2, FONT_BOLD) >= MinMatch;
+  Result := RSOCR.LocateInvert([Bounds.X1 + 70, Bounds.Y1 + 10, Bounds.X2 - 70, Bounds.Y1 + 26], Text, [$344049,0], 2, FONT_BOLD) >= MinMatch;
 end;
 
 function TRSInterfaceUtils.ReadTitle(Bounds: TBox): String;
 begin
-  Result := OCR.RecognizeStaticInvert([Bounds.X1 + 70, Bounds.Y1 + 10, Bounds.X2 - 70, Bounds.Y1 + 26], FONT_BOLD, [$344049,0], 2);
+  Result := RSOCR.RecognizeStaticInvert([Bounds.X1 + 70, Bounds.Y1 + 10, Bounds.X2 - 70, Bounds.Y1 + 26], FONT_BOLD, [$344049,0], 2);
 end;
 
 function TRSInterfaceUtils.BoundsFromTopLeft(Offset: TPoint; Width, Height: Integer): TBox;
@@ -160,22 +160,22 @@ end;
 
 function TRSInterfaceElement.ReadText(Colors: TColorArray; Tolerance: Single; Font: TPixelFont): String;
 begin
-  Result := OCR.Recognize(Self.Bounds, Font, Colors, Tolerance);
+  Result := RSOCR.Recognize(Self.Bounds, Font, Colors, Tolerance);
 end;
 
 function TRSInterfaceElement.ReadTextLines(Colors: TColorArray; Tolerance: Single; Font: TPixelFont): TStringArray;
 begin
-  Result := OCR.RecognizeLines(Self.Bounds, Font, Colors, Tolerance);
+  Result := RSOCR.RecognizeLines(Self.Bounds, Font, Colors, Tolerance);
 end;
 
 function TRSInterfaceElement.ReadNumber(Colors: TColorArray; Tolerance: Single; Font: TPixelFont): Int64;
 begin
-  Result := OCR.Recognize(Self.Bounds, Font, Colors, Tolerance).ExtractInteger(-1);
+  Result := RSOCR.Recognize(Self.Bounds, Font, Colors, Tolerance).ExtractInteger(-1);
 end;
 
 function TRSInterfaceElement.HasText(Text: String; Colors: TColorArray; Tolerance: Single; Font: TPixelFont; MinMatch: Single = 1): Boolean;
 begin
-  Result := OCR.Locate(Self.Bounds, Text, Colors, Tolerance, Font) >= MinMatch;
+  Result := RSOCR.Locate(Self.Bounds, Text, Colors, Tolerance, Font) >= MinMatch;
 end;
 
 procedure TRSInterfaceElement.Click(Button: EMouseButton = EMouseButton.LEFT);
@@ -214,8 +214,8 @@ begin
       ClientImage.SetSize(Boxes[I].Width, Boxes[I].Height);
       ClientImage.DrawTarget([0, 0], Boxes[I]);
 
-      for ItemImage in ItemImages.Get(ItemNames) do
-        if ItemImages.Match(ItemImage, ClientImage) then
+      for ItemImage in RSItemImages.Get(ItemNames) do
+        if RSItemImages.Match(ItemImage, ClientImage) then
         begin
           Result += I;
           if (Length(Result) = MaxToFind) then
@@ -263,4 +263,4 @@ begin
 end;
 
 var
-  InterfaceUtils: TRSInterfaceUtils;
+  RSInterfaceUtils: TRSInterfaceUtils;

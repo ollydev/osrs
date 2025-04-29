@@ -1,4 +1,4 @@
-{$DEFINE INCLUDED_MAINSCREEN}
+{$DEFINE INCLUDED_RSMAINSCREEN}
 {$include_once osrs.simba}
 
 type
@@ -46,4 +46,4 @@ end;
 
 
 var
-  MainScreen: TRSMainScreen;
+  RSMainScreen: TRSMainScreen;

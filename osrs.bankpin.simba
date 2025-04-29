@@ -1,4 +1,4 @@
-{$DEFINE INCLUDED_BANKPIN}
+{$DEFINE INCLUDED_RSBANKPIN}
 {$include_once osrs.simba}
 
 type
@@ -30,10 +30,10 @@ end;
 
 procedure TRSBankPin.Setup;
 begin
-  Self.Bounds := InterfaceUtils.BoundsFromCenter(488, 305);
+  Self.Bounds := RSInterfaceUtils.BoundsFromCenter(488, 305);
   Self.Bounds.Y1 += 5;
   Self.Bounds.Y2 += 5;
 end;
 
 var
-  BankPin: TRSBankPin;
+  RSBankPin: TRSBankPin;

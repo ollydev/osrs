@@ -1,4 +1,4 @@
-{$DEFINE INCLUDED_CHAT}
+{$DEFINE INCLUDED_RSCHAT}
 {$include_once osrs.simba}
 
 type
@@ -29,7 +29,7 @@ end;
 
 function TRSChat.GetDisplayName(): String;
 begin
-  Result := OCR.RecognizeStatic(Self.InputLineBox, FONT_PLAIN_12, [Colors.WHITE], 0);
+  Result := RSOCR.RecognizeStatic(Self.InputLineBox, FONT_PLAIN_12, [Colors.WHITE], 0);
   if (Result.Pop <> ':') then
     Result := '';
 end;
@@ -56,7 +56,7 @@ const
     TPA := TPA.Offset([-1,-1]).ExcludePoints(TPA);
     Image.ReplaceColorBinary(False, Image.GetColors(TPA).Unique, 0);
 
-    Result := OCR.Engine.Recognize(Image, FONT_PLAIN_12, [0,0]);
+    Result := RSOCR.Engine.Recognize(Image, FONT_PLAIN_12, [0,0]);
 
     Image.Free();
   end;
@@ -71,7 +71,7 @@ const
     TPA := Target.FindColor(BG_COLOR, B).Invert();
     TextColors := Target.GetColors(TPA).Unique();
 
-    Result := OCR.Recognize(b, FONT_PLAIN_12, TextColors, 0);
+    Result := RSOCR.Recognize(b, FONT_PLAIN_12, TextColors, 0);
   end;
 
 var
@@ -106,7 +106,7 @@ end;
 
 function TRSChat.GetQuery: String;
 begin
-  Result := OCR.RecognizeLines(Self.Bounds, FONT_BOLD, [0], 1).Join(' ');
+  Result := RSOCR.RecognizeLines(Self.Bounds, FONT_BOLD, [0], 1).Join(' ');
 end;
 
 function TRSChat.HasQuery(SubString: String): Boolean;
@@ -118,7 +118,7 @@ function TRSChat.AnswerQuery(Query, Answer: String): Boolean;
 
   function CurrentAnswer: String;
   begin
-    Result := OCR.Recognize(Self.Bounds, FONT_BOLD, [$7F0000], 1);
+    Result := RSOCR.Recognize(Self.Bounds, FONT_BOLD, [$7F0000], 1);
   end;
 
   function EraseAnswer: Boolean;
@@ -164,11 +164,11 @@ end;
 
 procedure TRSChat.Setup;
 begin
-  Self.Bounds := InterfaceUtils.BoundsFromBottomLeft([0, -165], 518, 141);
+  Self.Bounds := RSInterfaceUtils.BoundsFromBottomLeft([0, -165], 518, 141);
   Self.LineBoxes := TBoxArray.Create([Self.Bounds.X1 + 10, Self.Bounds.Y1 + 8], 1, 9, Self.Bounds.Width - 35, 13, [0, 1]);
   Self.InputLineBox := Self.LineBoxes.Pop;
   Self.InputLineBox.Y2 += 2;
 end;
 
 var
-  Chat: TRSChat;
+  RSChat: TRSChat;

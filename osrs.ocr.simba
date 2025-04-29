@@ -1,22 +1,18 @@
-{$DEFINE INCLUDED_OCR}
+{$DEFINE INCLUDED_RSOCR}
 {$include_once osrs.simba}
 
 type
   TRSOCR = record
-    const FONTS_PATH = {$macro DIR} + 'ocr/fonts/';
-
     Engine: TPixelOCR;
   end;
 
 var
-  OCR: TRSOCR;
-
-  FONT_PLAIN_11:    TPixelFont := OCR.Engine.LoadFont(OCR.FONTS_PATH + 'Plain 11', 4);
-  FONT_PLAIN_12:    TPixelFont := OCR.Engine.LoadFont(OCR.FONTS_PATH + 'Plain 12', 4);
-  FONT_BOLD:        TPixelFont := OCR.Engine.LoadFont(OCR.FONTS_PATH + 'Bold 12', 4);
-  FONT_BOLD_SHADOW: TPixelFont := OCR.Engine.LoadFont(OCR.FONTS_PATH + 'Bold 12 Shadow', 4);
-  FONT_QUILL_8:     TPixelFont := OCR.Engine.LoadFont(OCR.FONTS_PATH + 'Quill 8', 4);
-  FONT_QUILL:       TPixelFont := OCR.Engine.LoadFont(OCR.FONTS_PATH + 'Quill', 4);
+  FONT_PLAIN_11:    TPixelFont := TPixelOCR.LoadFont({$macro DIR} + 'ocr/fonts/Plain 11', 4);
+  FONT_PLAIN_12:    TPixelFont := TPixelOCR.LoadFont({$macro DIR} + 'ocr/fonts/Plain 12', 4);
+  FONT_BOLD:        TPixelFont := TPixelOCR.LoadFont({$macro DIR} + 'ocr/fonts/Bold 12', 4);
+  FONT_BOLD_SHADOW: TPixelFont := TPixelOCR.LoadFont({$macro DIR} + 'ocr/fonts/Bold 12 Shadow', 4);
+  FONT_QUILL_8:     TPixelFont := TPixelOCR.LoadFont({$macro DIR} + 'ocr/fonts/Quill 8', 4);
+  FONT_QUILL:       TPixelFont := TPixelOCR.LoadFont({$macro DIR} + 'ocr/fonts/Quill', 4);
 
 function TRSOCR.RecognizeStatic(Bounds: TBox; Font: TPixelFont; Colors: TColorArray; Tolerance: Single): String; overload;
 var
@@ -93,6 +89,9 @@ begin
   img.Free();
 end;
 
+var
+  RSOCR: TRSOCR;
+
 function CountItemStack(Area: TBox): Int64;
 const
   Colors = [RSColors.ITEM_TEXT_YELLOW, RSColors.ITEM_TEXT_WHITE, RSColors.ITEM_TEXT_GREEN];
@@ -103,7 +102,7 @@ var
 begin
   for I := 0 to High(Colors) do
   begin
-    Text := OCR.Recognize(Area, FONT_PLAIN_11, [Colors[I]], 0);
+    Text := RSOCR.Recognize(Area, FONT_PLAIN_11, [Colors[I]], 0);
     if Text.IsInteger then
       Exit(Text.ToInt() * Multipliers[I]);
   end;
@@ -115,11 +114,11 @@ var
   Match: Single;
   B: TBox;
 begin
-  Match := OCR.Locate(Area, Text, [Color], Tolerance, Font);
+  Match := RSOCR.Locate(Area, Text, [Color], Tolerance, Font);
 
   if (Match >= MinMatch) then
   begin
-    B := OCR.Engine.Matches[0].Bounds;
+    B := RSOCR.Engine.Matches[0].Bounds;
     B := B.Offset(Area.TopLeft);
 
     Target.MouseMove(B);
@@ -128,5 +127,7 @@ begin
     Result := True;
   end;
 end;
+
+
 
 

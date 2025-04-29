@@ -1,4 +1,4 @@
-{$DEFINE INCLUDED_MINIMAP}
+{$DEFINE INCLUDED_RSMINIMAP}
 {$include_once osrs.simba}
 
 type
@@ -42,7 +42,7 @@ begin
   B.Y1 := B.Y1 + 10;
   B.X2 := B.X1 + 22;
 
-  Result := OCR.RecognizeShadow(B, FONT_PLAIN_11, 0).ToInt(-1);
+  Result := RSOCR.RecognizeShadow(B, FONT_PLAIN_11, 0).ToInt(-1);
 end;
 
 function TRSMinimap.GetOrbCircle(Orb: EMinimapOrb): TCircle;
@@ -193,25 +193,25 @@ begin
   case RSClient.ClientMode() of
     ERSClientMode.FIXED:
       begin
-        Self.Bounds := InterfaceUtils.BoundsFromTopRight([-195,9], 144, 150);
-        Self.CompassBounds := InterfaceUtils.BoundsFromTopRight([-221,3], 33, 33);
+        Self.Bounds := RSInterfaceUtils.BoundsFromTopRight([-195,9], 144, 150);
+        Self.CompassBounds := RSInterfaceUtils.BoundsFromTopRight([-221,3], 33, 33);
 
-        Self.OrbBounds[EMinimapOrb.HP] := InterfaceUtils.BoundsFromTopRight([-245,45], 48, 25);
-        Self.OrbBounds[EMinimapOrb.PRAYER] := InterfaceUtils.BoundsFromTopRight([-245,79], 48, 25);
-        Self.OrbBounds[EMinimapOrb.RUN] := InterfaceUtils.BoundsFromTopRight([-235,111], 48, 25);
-        Self.OrbBounds[EMinimapOrb.SPECIAL] := InterfaceUtils.BoundsFromTopRight([-213,136], 48, 25);
+        Self.OrbBounds[EMinimapOrb.HP] := RSInterfaceUtils.BoundsFromTopRight([-245,45], 48, 25);
+        Self.OrbBounds[EMinimapOrb.PRAYER] := RSInterfaceUtils.BoundsFromTopRight([-245,79], 48, 25);
+        Self.OrbBounds[EMinimapOrb.RUN] := RSInterfaceUtils.BoundsFromTopRight([-235,111], 48, 25);
+        Self.OrbBounds[EMinimapOrb.SPECIAL] := RSInterfaceUtils.BoundsFromTopRight([-213,136], 48, 25);
       end;
 
     ERSClientMode.RESIZABLE_CLASSIC,
     ERSClientMode.RESIZABLE_MODERN:
       begin
-        Self.Bounds := InterfaceUtils.BoundsFromTopRight([-158,8], 151, 151);
-        Self.CompassBounds := InterfaceUtils.BoundsFromTopRight([-177,5], 33, 33);
+        Self.Bounds := RSInterfaceUtils.BoundsFromTopRight([-158,8], 151, 151);
+        Self.CompassBounds := RSInterfaceUtils.BoundsFromTopRight([-177,5], 33, 33);
 
-        Self.OrbBounds[EMinimapOrb.HP] := InterfaceUtils.BoundsFromTopRight([-207,51], 48, 25);
-        Self.OrbBounds[EMinimapOrb.PRAYER] := InterfaceUtils.BoundsFromTopRight([-207,85], 48, 25);
-        Self.OrbBounds[EMinimapOrb.RUN] := InterfaceUtils.BoundsFromTopRight([-197,117], 48, 25);
-        Self.OrbBounds[EMinimapOrb.SPECIAL] := InterfaceUtils.BoundsFromTopRight([-175,142], 48, 25);
+        Self.OrbBounds[EMinimapOrb.HP] := RSInterfaceUtils.BoundsFromTopRight([-207,51], 48, 25);
+        Self.OrbBounds[EMinimapOrb.PRAYER] := RSInterfaceUtils.BoundsFromTopRight([-207,85], 48, 25);
+        Self.OrbBounds[EMinimapOrb.RUN] := RSInterfaceUtils.BoundsFromTopRight([-197,117], 48, 25);
+        Self.OrbBounds[EMinimapOrb.SPECIAL] := RSInterfaceUtils.BoundsFromTopRight([-175,142], 48, 25);
       end;
   end;
 
@@ -220,4 +220,4 @@ begin
 end;
 
 var
-  Minimap: TRSMinimap;
+  RSMinimap: TRSMinimap;

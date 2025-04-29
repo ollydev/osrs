@@ -1,4 +1,4 @@
-{$DEFINE INCLUDED_GAMETABS}
+{$DEFINE INCLUDED_RSGAMETABS}
 {$include_once osrs.simba}
 
 type
@@ -60,18 +60,18 @@ begin
   case RSClient.ClientMode() of
     ERSClientMode.FIXED:
       begin
-        Self.Bounds := InterfaceUtils.BoundsFromBottomRight([-218, -299], 189, 261);
+        Self.Bounds := RSInterfaceUtils.BoundsFromBottomRight([-218, -299], 189, 261);
 
         Self.TabButtons := TBoxArray.Create([Target.Width - 237, Target.Height - 334], 7, 2, 30, 33, [3, 265]);
-        Self.TabBounds := InterfaceUtils.BoundsFromBottomRight([-218, -299], 189, 261);
+        Self.TabBounds := RSInterfaceUtils.BoundsFromBottomRight([-218, -299], 189, 261);
       end;
 
     ERSClientMode.RESIZABLE_CLASSIC:
       begin
-        Self.Bounds := InterfaceUtils.BoundsFromBottomRight([-216, -299], 189, 261);
+        Self.Bounds := RSInterfaceUtils.BoundsFromBottomRight([-216, -299], 189, 261);
 
         Self.TabButtons := TBoxArray.Create([Target.Width - 235, Target.Height - 334], 7, 2, 30, 33, [3, 265]);
-        Self.TabBounds := InterfaceUtils.BoundsFromBottomRight([-216, -299], 189, 261);
+        Self.TabBounds := RSInterfaceUtils.BoundsFromBottomRight([-216, -299], 189, 261);
       end;
 
     ERSClientMode.RESIZABLE_MODERN:
@@ -79,15 +79,15 @@ begin
         // one row
         if (Target.Width >= 948) then
         begin
-          Self.Bounds := InterfaceUtils.BoundsFromBottomRight([-197, -305], 189, 261);
+          Self.Bounds := RSInterfaceUtils.BoundsFromBottomRight([-197, -305], 189, 261);
           Self.TabButtons := TBoxArray.Create([Target.Width - 428, Target.Height - 35], 14, 1, 30, 33, [3, 0]);
-          Self.TabBounds := InterfaceUtils.BoundsFromBottomRight([-197, -305], 189, 261);
+          Self.TabBounds := RSInterfaceUtils.BoundsFromBottomRight([-197, -305], 189, 261);
         end else
         // stacked
         begin
-          Self.Bounds := InterfaceUtils.BoundsFromBottomRight([-197, -341], 189, 261);
+          Self.Bounds := RSInterfaceUtils.BoundsFromBottomRight([-197, -341], 189, 261);
           Self.TabButtons := TBoxArray.Create([Target.Width - 230, Target.Height - 71], 7, 2, 30, 33, [3, 3]);
-          Self.TabBounds := InterfaceUtils.BoundsFromBottomRight([-197, -341], 189, 261);
+          Self.TabBounds := RSInterfaceUtils.BoundsFromBottomRight([-197, -341], 189, 261);
         end;
 
         // rearrange to match ERSGameTab layout
@@ -100,5 +100,5 @@ begin
 end;
 
 var
-  GameTabs: TRSGameTabs;
+  RSGameTabs: TRSGameTabs;
 

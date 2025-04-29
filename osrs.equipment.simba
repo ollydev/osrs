@@ -1,13 +1,13 @@
-{$DEFINE INCLUDED_EQUIPMENT}
+{$DEFINE INCLUDED_RSEQUIPMENT}
 {$include_once osrs.simba}
 
 type
   ERSEquipmentSlot = enum(
-    HEAD,
-    CAPE, NECK, AMMO,
+            HEAD,
+    CAPE,   NECK, AMMO,
     WEAPON, BODY, SHIELD,
-    LEGS,
-    HANDS, FEET, RING
+            LEGS,
+    HANDS,  FEET, RING
   );
 
   TRSEquipmentTab = record
@@ -17,12 +17,12 @@ type
 
 function TRSEquipmentTab.IsOpen: Boolean;
 begin
-  Result := GameTabs.IsCurrentTab(ERSGameTab.EQUIPMENT);
+  Result := RSGameTabs.IsCurrentTab(ERSGameTab.EQUIPMENT);
 end;
 
 function TRSEquipmentTab.Open: Boolean;
 begin
-  Result := GameTabs.Open(ERSGameTab.EQUIPMENT);
+  Result := RSGameTabs.Open(ERSGameTab.EQUIPMENT);
 end;
 
 function TRSEquipmentTab.IsWearing(Item: String; Slot: ERSEquipmentSlot): Boolean;
@@ -30,12 +30,12 @@ begin
   if not Self.Open() then
     Exit;
 
-  Result := InterfaceUtils.ItemFind(Item, [Self.Slots[Slot]]) <> [];
+  Result := RSInterfaceUtils.ItemFind(Item, [Self.Slots[Slot]]) <> [];
 end;
 
 procedure TRSEquipmentTab.Setup;
 begin
-  Self.Bounds := GameTabs.TabBounds;
+  Self.Bounds := RSGameTabs.TabBounds;
 
   Self.Slots := TBoxArray.Create(Self.Bounds.TopLeft + [79,7],   1, 1, 31, 31, [0,0])  +
                 TBoxArray.Create(Self.Bounds.TopLeft + [38,46],  3, 1, 31, 31, [10,0]) +
@@ -45,4 +45,4 @@ begin
 end;
 
 var
-  Equipment: TRSEquipmentTab;
+  RSEquipment: TRSEquipmentTab;

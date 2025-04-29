@@ -3,20 +3,20 @@
 
 procedure SetupInterfaces;
 begin
-  Login.Setup();
-  GameTabs.Setup();
-  Inventory.Setup();
-  Equipment.Setup();
-  Skills.Setup();
-  Logout.Setup();
-  Options.Setup();
-  Minimap.Setup();
-  XPBar.Setup();
-  MainScreen.Setup();
-  Bank.Setup();
-  BankPin.Setup();
-  ChatTabs.Setup();
-  Chat.Setup();
+  RSLogin.Setup();
+  RSGameTabs.Setup();
+  RSInventory.Setup();
+  RSEquipment.Setup();
+  RSSkills.Setup();
+  RSLogout.Setup();
+  RSOptions.Setup();
+  RSMinimap.Setup();
+  RSXPBar.Setup();
+  RSMainScreen.Setup();
+  RSBank.Setup();
+  RSBankPin.Setup();
+  RSChatTabs.Setup();
+  RSChat.Setup();
 end;
 
 procedure SetupInterfaces_TargetResized(var Target: TTarget; Data: TTargetEventData);

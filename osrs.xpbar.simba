@@ -1,4 +1,4 @@
-{$DEFINE INCLUDED_XPBAR}
+{$DEFINE INCLUDED_RSXPBAR}
 {$include_once osrs.simba}
 
 type
@@ -67,9 +67,9 @@ begin
   B.X1 += 25;
 
   case Self.Size() of
-    ERSXPBarSize.SMALL:  Text := OCR.RecognizeStatic(B, FONT_PLAIN_11, [Colors.WHITE], 0);
-    ERSXPBarSize.MEDIUM: Text := OCR.RecognizeStatic(B, FONT_PLAIN_12, [Colors.WHITE], 0);
-    ERSXPBarSize.LARGE:  Text := OCR.RecognizeStatic(B, FONT_BOLD,     [Colors.WHITE], 0);
+    ERSXPBarSize.SMALL:  Text := RSOCR.RecognizeStatic(B, FONT_PLAIN_11, [Colors.WHITE], 0);
+    ERSXPBarSize.MEDIUM: Text := RSOCR.RecognizeStatic(B, FONT_PLAIN_12, [Colors.WHITE], 0);
+    ERSXPBarSize.LARGE:  Text := RSOCR.RecognizeStatic(B, FONT_BOLD,     [Colors.WHITE], 0);
   end;
 
   Result := Text.Replace(',', '').ToInt(-1);
@@ -82,13 +82,13 @@ begin
   case RSClient.ClientMode() of
     ERSClientMode.FIXED:
       begin
-        B := InterfaceUtils.BoundsFromTopRight([-249,21], 26, 26);
+        B := RSInterfaceUtils.BoundsFromTopRight([-249,21], 26, 26);
       end;
 
     ERSClientMode.RESIZABLE_CLASSIC,
     ERSClientMode.RESIZABLE_MODERN:
       begin
-        B := InterfaceUtils.BoundsFromTopRight([-211,27], 26, 26);
+        B := RSInterfaceUtils.BoundsFromTopRight([-211,27], 26, 26);
       end;
   end;
 
@@ -99,5 +99,5 @@ begin
 end;
 
 var
-  XPBar: TRSXPBar;
+  RSXPBar: TRSXPBar;
 

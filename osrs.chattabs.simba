@@ -1,4 +1,4 @@
-{$DEFINE INCLUDED_CHATTABS}
+{$DEFINE INCLUDED_RSCHATTABS}
 {$include_once osrs.simba}
 
 type
@@ -8,8 +8,8 @@ type
 
 procedure TRSChatTabs.Setup;
 begin
-  Self.Bounds := InterfaceUtils.BoundsFromBottomLeft([0, -23], 518, 21);
+  Self.Bounds := RSInterfaceUtils.BoundsFromBottomLeft([0, -23], 518, 21);
 end;
 
 var
-  ChatTabs: TRSChatTabs;
+  RSChatTabs: TRSChatTabs;

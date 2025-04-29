@@ -1,0 +1,37 @@
+{$DEFINE INCLUDED_RSMOUSE}
+{$include_once osrs.simba}
+
+type
+  TRSMouse = record end;
+
+procedure TRSMouse.Move(p: TPoint);
+begin
+  Target.MouseMove(p);
+end;
+
+procedure TRSMouse.Click(p: TPoint; Button: EMouseButton); overload;
+begin
+  Target.MouseMove(p);
+  Target.MouseClick(Button);
+end;
+
+function TRSMouse.Click(p: TPoint; Button: EMouseButton; Uptext: String; Similarity: Single = 0.9): Boolean; overload;
+begin
+  Target.MouseMove(p);
+
+  if RSMainScreen.IsUpText(Uptext, Similarity) then
+  begin
+    Target.MouseClick(Button);
+
+    Result := True;
+  end;
+end;
+
+procedure TRSMouse.Click(box: TBox; Button: EMouseButton); overload;
+begin
+  Target.MouseMove(box);
+  Target.MouseClick(Button);
+end;
+
+var
+  RSMouse: TRSMouse;
