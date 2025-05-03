@@ -76,8 +76,8 @@ function TRSLogin.EnterGame: Boolean;
 var
   T: UInt64;
 begin
-  T := GetTickCount() + 3500;
-  while (T > GetTickCount()) do
+  T := Time() + 3500;
+  while (T > Time()) do
   begin
     if ClickText('CLICK HERE TO PLAY', Colors.WHITE, 0, FONT_BOLD, Self.Bounds) then
       Break;

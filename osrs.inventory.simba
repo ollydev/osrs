@@ -77,90 +77,66 @@ begin
   Result := Length(Self.GetUsedSlots());
 end;
 
-function TRSInventory.FindItems(ItemName: String): TIntegerArray;
+function TRSInventory.ItemFind(ItemName: String): TIntegerArray; overload;
 begin
-  if not Self.Open() then
-    Exit;
-
-  Result := RSInterfaceUtils.ItemFind(ItemName, Self.Slots);
+  if Self.Open() then
+    Result := RSItemFinder.Find(ItemName, Self.Slots);
 end;
 
-function TRSInventory.FindAllItems(ItemNames: TStringArray): TIntegerArray;
+function TRSInventory.ItemFind(ItemNames: TStringArray): TIntegerArray; overload;
 begin
-  if not Self.Open() then
-    Exit;
-
-  Result := RSInterfaceUtils.ItemFind(ItemNames, Self.Slots);
+  if Self.Open() then
+    Result := RSItemFinder.Find(ItemNames, Self.Slots);
 end;
 
-function TRSInventory.FindItem(ItemName: String): Integer;
-var
-  Arr: TIntegerArray;
+function TRSInventory.ItemMouse(ItemName: String): Boolean;
 begin
-  Arr := RSInterfaceUtils.ItemFind(ItemName, Self.Slots, 1);
-  if Length(Arr) then
-    Result := Arr[0]
-  else
-    Result := -1;
+  if Self.Open() then
+    Result := RSItemFinder.Mouse(ItemName, Self.Slots);
 end;
 
-function TRSInventory.MouseItem(ItemName: String): Boolean;
-var
-  Index: Integer;
+function TRSInventory.ItemClick(ItemName: String; Button: EMouseButton): Boolean;
 begin
-  Index := Self.FindItem(ItemName);
-
-  Result := Index > -1;
-  if Result then
-    Self.MouseSlot(Index);
+  if Self.Open() then
+    Result := RSItemFinder.Click(ItemName, Self.Slots, Button);
 end;
 
-function TRSInventory.ClickItem(ItemName: String; Button: EMouseButton): Boolean;
+function TRSInventory.ItemClickAny(ItemNames: TStringArray; Button: EMouseButton): Boolean;
 begin
-  if not Self.Open() then
-    Exit;
-
-  Result := RSInterfaceUtils.ItemClick(ItemName, Self.Slots, Button);
+  if Self.Open() then
+    Result := RSItemFinder.ClickAny(ItemNames, Self.Slots, Button);
 end;
 
-function TRSInventory.ClickAnyItem(ItemNames: TStringArray; Button: EMouseButton): Boolean;
+function TRSInventory.ItemCount(ItemName: String): Integer; overload;
 begin
-  if not Self.Open() then
-    Exit;
-
-  Result := RSInterfaceUtils.ItemClickAny(ItemNames, Self.Slots, Button);
+  if Self.Open() then
+    Result := RSItemFinder.Count(ItemName, Self.Slots);
 end;
 
-function TRSInventory.CountItem(ItemName: String): Integer;
+function TRSInventory.ItemCount(ItemNames: TStringArray): Integer; overload;
 begin
-  Result := Length(Self.FindItems(ItemName));
+  if Self.Open() then
+    Result := RSItemFinder.Count(ItemNames, Self.Slots);
 end;
 
-function TRSInventory.CountAllItems(ItemNames: TStringArray): Integer;
+function TRSInventory.ItemCountStack(ItemName: String): Integer;
 begin
-  Result := Length(Self.FindAllItems(ItemNames));
+  if Self.Open() then
+    Result := RSItemFinder.CountStack(ItemName, Self.Slots);
 end;
 
-function TRSInventory.CountItemStack(ItemName: String): Integer;
-var
-  Index: Integer;
+function TRSInventory.ItemExists(ItemName: String): Boolean; overload;
 begin
-  Index := Self.FindItem(ItemName);
-  if (Index > -1) then
-    Result := CountItemStack(Self.Slots[Index]);
+  if Self.Open() then
+    Result := Self.ItemFind(ItemName) <> [];
 end;
 
-function TRSInventory.HasItem(ItemName: String): Boolean;
-begin
-  Result := Self.FindItem(ItemName) > -1;
-end;
-
-function TRSInventory.HasAnyItems(ItemNames: TStringArray): Boolean;
+function TRSInventory.ItemExists(ItemNames: TStringArray): Boolean; overload;
 var
   ItemName: String;
 begin
   for ItemName in ItemNames do
-    if Self.FindItem(ItemName) > -1 then
+    if Self.ItemFind(ItemName) <> [] then
       Exit(True);
 end;
 

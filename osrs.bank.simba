@@ -94,7 +94,7 @@ var
   Arr: TIntegerArray;
 begin
   Boxes := Self.FindItemBoxes();
-  Arr := RSInterfaceUtils.ItemFind(ItemName, Boxes, 1);
+  Arr := RSItemFinder.Find(ItemName, Boxes, 1);
   Result := Length(Arr) = 1;
   if Result then
     ItemBox := Boxes[Arr[0]];

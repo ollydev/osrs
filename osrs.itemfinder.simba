@@ -1,0 +1,86 @@
+{$DEFINE INCLUDED_RSITEMFINDER}
+{$include_once osrs.simba}
+
+type
+  TRSItemFinder = record end;
+
+function TRSItemFinder.Find(ItemNames: TStringArray; Boxes: TBoxArray; MaxToFind: Integer = -1): TIntegerArray; overload;
+var
+  ClientImage, ItemImage: TImage;
+  I: Integer;
+begin
+  ClientImage := TImage.Create();
+
+  try
+    for I := 0 to High(Boxes) do
+    begin
+      ClientImage.SetSize(Boxes[I].Width, Boxes[I].Height);
+      ClientImage.DrawTarget([0, 0], Boxes[I]);
+
+      for ItemImage in RSItemImages.Get(ItemNames) do
+        if RSItemImages.Match(ItemImage, ClientImage) then
+        begin
+          Result += I;
+          if (Length(Result) = MaxToFind) then
+            Exit;
+        end;
+    end;
+  finally
+    ClientImage.Free();
+  end;
+end;
+
+function TRSItemFinder.Find(ItemName: String; Boxes: TBoxArray; MaxToFind: Integer = -1): TIntegerArray; overload;
+begin
+  Result := Self.Find([ItemName], Boxes, MaxToFind);
+end;
+
+function TRSItemFinder.MouseAny(ItemNames: TStringArray; Boxes: TBoxArray): Boolean;
+var
+  Indices: TIntegerArray;
+begin
+  Indices := Self.Find(ItemNames, Boxes, 1);
+
+  Result := Length(Indices) > 0;
+  if Result then
+    RSMouse.Move(Boxes[Indices[0]]);
+end;
+
+function TRSItemFinder.Mouse(ItemName: String; Boxes: TBoxArray): Boolean;
+begin
+  Result := Self.MouseAny([ItemName], Boxes);
+end;
+
+function TRSItemFinder.ClickAny(ItemNames: TStringArray; Boxes: TBoxArray; Button: EMouseButton): Boolean;
+begin
+  Result := Self.MouseAny(ItemNames, Boxes);
+  if Result then
+    RSMouse.Click(EMouseButton.LEFT);
+end;
+
+function TRSItemFinder.Click(ItemName: String; Boxes: TBoxArray; Button: EMouseButton): Boolean;
+begin
+  Result := Self.ClickAny([ItemName], Boxes, Button);
+end;
+
+function TRSItemFinder.Count(ItemName: String; Boxes: TBoxArray): Integer; overload;
+begin
+  Result := Length(Self.Find(ItemName, Boxes));
+end;
+
+function TRSItemFinder.Count(ItemNames: TStringArray; Boxes: TBoxArray): Integer; overload;
+begin
+  Result := Length(Self.Find(ItemNames, Boxes));
+end;
+
+function TRSItemFinder.CountStack(ItemName: String; Boxes: TBoxArray): Integer;
+var
+  Arr: TIntegerArray;
+begin
+  Arr := Self.Find(ItemName, Boxes, 1);
+  if Arr <> [] then
+    Result := CountItemStack(Boxes[Arr[0]]);
+end;
+
+var
+  RSItemFinder: TRSItemFinder;

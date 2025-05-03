@@ -30,7 +30,7 @@ begin
   if not Self.Open() then
     Exit;
 
-  Result := RSInterfaceUtils.ItemFind(Item, [Self.Slots[Slot]]) <> [];
+  Result := RSItemFinder.Find(Item, [Self.Slots[Slot]]) <> [];
 end;
 
 procedure TRSEquipmentTab.Setup;

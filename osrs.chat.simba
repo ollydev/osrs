@@ -123,13 +123,13 @@ function TRSChat.AnswerQuery(Query, Answer: String): Boolean;
 
   function EraseAnswer: Boolean;
   var
-    Timeout: UInt64;
+    Timeout: Int64;
   begin
     if (CurrentAnswer() = '*') then
       Exit(True);
 
-    Timeout := GetTickCount() + 2000;
-    while (Timeout > GetTickCount()) and (CurrentAnswer() <> '*') do
+    Timeout := Time() + 2000;
+    while (Timeout > Time()) and (CurrentAnswer() <> '*') do
     begin
       Target.KeyPress(EKeyCode.BACK);
 

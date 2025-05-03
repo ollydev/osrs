@@ -4,9 +4,19 @@
 type
   TRSMouse = record end;
 
-procedure TRSMouse.Move(p: TPoint);
+procedure TRSMouse.Move(p: TPoint); overload;
 begin
   Target.MouseMove(p);
+end;
+
+procedure TRSMouse.Move(b: TBox); overload;
+begin
+  Target.MouseMove(b);
+end;
+
+procedure TRSMouse.Click(Button: EMouseButton); overload;
+begin
+  Target.MouseClick(Button);
 end;
 
 procedure TRSMouse.Click(p: TPoint; Button: EMouseButton); overload;

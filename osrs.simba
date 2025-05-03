@@ -5,6 +5,7 @@
 {$IFNDEF INCLUDED_RSMOUSE}              {$I osrs.mouse}
 {$IFNDEF INCLUDED_RSMENU}               {$I osrs.menu}
 {$IFNDEF INCLUDED_RSITEMIMAGES}         {$I osrs.itemimages}
+{$IFNDEF INCLUDED_RSITEMFINDER}         {$I osrs.itemfinder}
 {$IFNDEF INCLUDED_RSINTERFACE}          {$I osrs.interface}
 {$IFNDEF INCLUDED_RSGAMETABS}           {$I osrs.gametabs}
 {$IFNDEF INCLUDED_RSCHATTABS}           {$I osrs.chattabs}
@@ -44,4 +45,6 @@
 {$ENDIF}
 {$ENDIF}
 {$ENDIF}
+{$ENDIF}
+
 
