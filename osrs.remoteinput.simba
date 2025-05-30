@@ -14,10 +14,10 @@ var
 
 procedure TRemoteInput.Setup;
 var
-  T: UInt64 := GetTickCount() + 3000;
+  T: UInt64 := Time() + 3000;
 begin
   RIInject(GetSimbaTargetPID());
-  while (T > GetTickCount()) do
+  while (T > Time()) do
   begin
     Self.EIOS := EIOS_PairClient(GetSimbaTargetPID());
     if (Self.EIOS <> nil) then

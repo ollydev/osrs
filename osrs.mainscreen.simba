@@ -34,9 +34,8 @@ function TRSMainScreen.GetUpText: String;
 var
   img: TImage;
 begin
-  img := TImage.CreateFromTarget(Self.UptextBounds);
+  img := Target.GetImage(Self.UptextBounds);
   Result := Self.UptextOCR.Recognize(img, FONT_BOLD_SHADOW, [0,0]);
-  img.Free();
 end;
 
 function TRSMainScreen.IsUpText(Target: String; Similarity: Single = 0.9): Boolean;

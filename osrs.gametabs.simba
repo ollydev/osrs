@@ -47,8 +47,7 @@ begin
 
   for 1 to 3 do
   begin
-    Target.MouseMove(Self.TabButtons[Tab].RandomPointCenter());
-    Target.MouseClick(EMouseButton.LEFT);
+    RSMouse.Click(Self.TabButtons[Tab], EMouseButton.LEFT);
 
     if SleepUntil(Self.IsCurrentTab(Tab), RandomLeft(100, 1000), 2500) then
       Exit(True);

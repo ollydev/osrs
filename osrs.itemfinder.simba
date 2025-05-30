@@ -9,24 +9,20 @@ var
   ClientImage, ItemImage: TImage;
   I: Integer;
 begin
-  ClientImage := TImage.Create();
+  ClientImage := new TImage;
 
-  try
-    for I := 0 to High(Boxes) do
-    begin
-      ClientImage.SetSize(Boxes[I].Width, Boxes[I].Height);
-      ClientImage.DrawTarget([0, 0], Boxes[I]);
+  for I := 0 to High(Boxes) do
+  begin
+    ClientImage.SetSize(Boxes[I].Width, Boxes[I].Height);
+    ClientImage.DrawImage(Target.GetImage(Boxes[I]), [0,0]);
 
-      for ItemImage in RSItemImages.Get(ItemNames) do
-        if RSItemImages.Match(ItemImage, ClientImage) then
-        begin
-          Result += I;
-          if (Length(Result) = MaxToFind) then
-            Exit;
-        end;
-    end;
-  finally
-    ClientImage.Free();
+    for ItemImage in RSItemImages.Get(ItemNames) do
+      if RSItemImages.Match(ItemImage, ClientImage) then
+      begin
+        Result += I;
+        if (Length(Result) = MaxToFind) then
+          Exit;
+      end;
   end;
 end;
 
@@ -55,7 +51,7 @@ function TRSItemFinder.ClickAny(ItemNames: TStringArray; Boxes: TBoxArray; Butto
 begin
   Result := Self.MouseAny(ItemNames, Boxes);
   if Result then
-    RSMouse.Click(EMouseButton.LEFT);
+    RSMouse.Click(Button);
 end;
 
 function TRSItemFinder.Click(ItemName: String; Boxes: TBoxArray; Button: EMouseButton): Boolean;

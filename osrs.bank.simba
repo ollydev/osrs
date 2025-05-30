@@ -108,27 +108,18 @@ begin
 end;
 
 function TRSBank.ItemMouse(ItemName: String): Boolean;
-var
-  ItemBox: TBox;
 begin
-  Result := Self.ItemFind(ItemName, ItemBox);
-  if Result then
-    Target.MouseMove(ItemBox);
+  Result := RSItemFinder.Mouse(ItemName, Self.FindItemBoxes());
 end;
 
 function TRSBank.ItemClick(ItemName: String; Button: EMouseButton): Boolean;
 begin
-  Result := Self.ItemMouse(ItemName);
-  if Result then
-    Target.MouseClick(Button);
+  Result := RSItemFinder.Click(ItemName, Self.FindItemBoxes(), EMouseButton.LEFT);
 end;
 
 function TRSBank.ItemCountStack(ItemName: String): Integer;
-var
-  ItemBox: TBox;
 begin
-  if Self.ItemFind(ItemName, ItemBox) then
-    Result := CountItemStack(ItemBox);
+  Result := RSItemFinder.CountStack(ItemName, Self.FindItemBoxes());
 end;
 
 function TRSBank.ItemWithdraw(ItemName: String; Quantity: Integer): Boolean;
@@ -136,6 +127,19 @@ begin
   if Self.ItemClick(ItemName, EMouseButton.RIGHT) then
   begin
     RSMenu.Select('Withdraw-' + ToString(Quantity) + ' ');
+
+    Result := True;
+  end;
+end;
+
+function TRSBank.ItemDeposit(ItemName: String; Quantity: Integer): Boolean;
+begin
+  if RSInventory.ItemClick(ItemName, EMouseButton.RIGHT) then
+  begin
+    if (Quantity = -1) then
+      Result := RSMenu.Select('Deposit-All ')
+    else
+      Result := RSMenu.Select('Deposit-' + ToString(Quantity) + ' ');
   end;
 end;
 

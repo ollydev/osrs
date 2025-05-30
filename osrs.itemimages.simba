@@ -22,9 +22,9 @@ function TRSItemImages.Get(ItemName: String): TImageArray; overload;
     FileName := SimbaEnv.TempPath + ItemID + '_' + Self.ItemsZipHash + '.png';
     if not FileExists(FileName) then
     begin
-      Img := TImage.CreateFromZip(Self.ItemsZipFile, ItemID + '.png');
+      img := new TImage;
+      img.FromZip(Self.ItemsZipFile, ItemID + '.png');
       Img.Save(FileName);
-      Img.Free();
     end;
   end;
 
@@ -40,9 +40,7 @@ begin
     begin
       UnzipImage(ToString(ItemID), FileName);
 
-      Img := TImage.Create(FileName);
-      Img.FreeOnTerminate := True;
-
+      Img := new TImage(FileName);
       Self.ItemImages.Value[ToString(ItemID)] := Img;
     end;
 
@@ -69,10 +67,10 @@ var
   ClearTPA: TPointArray;
   ClearColor: TColor;
 begin
-  ItemImageBorder := ItemImage.Target.FindColor(RSColors.ITEM_BORDER, 0);
+  ItemImageBorder := ItemImage.FindColor(RSColors.ITEM_BORDER, 0);
   if (Length(ItemImageBorder) = 0) then
     Exit;
-  ClientImageBorder := ClientImage.Target.FindColor(RSColors.ITEM_BORDER, 0);
+  ClientImageBorder := ClientImage.FindColor(RSColors.ITEM_BORDER, 0);
   if (Length(ClientImageBorder) = 0) then
     Exit;
 
@@ -88,15 +86,15 @@ begin
   Align.Y := Max(0, ItemImageBorder[High(ItemImageBorder)].Y - ClientImageBorder[High(ClientImageBorder)].Y);
 
   AlignedImage := ItemImage.Copy();
-  AlignedTemplate := TImage.Create(AlignedImage.Width, AlignedImage.Height);
+  AlignedTemplate := new TImage(AlignedImage.Width, AlignedImage.Height);
   AlignedTemplate.DrawImage(ClientImage, Align);
 
   // find background and item shadow on item image to clear on both iamges
-  ClearTPA := AlignedImage.Target.FindColor(0, 0) + AlignedImage.Target.FindColor(RSColors.ITEM_SHADOW, 0);
+  ClearTPA := AlignedImage.FindColor(0, 0) + AlignedImage.FindColor(RSColors.ITEM_SHADOW, 0);
 
   // The client image has stack numbers, so clear these on the item image aswell
   for ClearColor in [RSColors.ITEM_TEXT_YELLOW, RSColors.ITEM_TEXT_WHITE, RSColors.ITEM_TEXT_GREEN, RSColors.ITEM_BORDER] do
-    ClearTPA += AlignedTemplate.Target.FindColor(ClearColor, 0);
+    ClearTPA += AlignedTemplate.FindColor(ClearColor, 0);
 
   AlignedImage.DrawColor := 0;
   AlignedImage.DrawTPA(ClearTPA);
@@ -108,10 +106,7 @@ begin
   //Halt;
 
   // Use .Compare if we ever need tolerance
-  Result := AlignedImage.PixelDifference(AlignedTemplate) = 0;
-
-  AlignedImage.Free();
-  AlignedTemplate.Free();
+  Result := AlignedImage.PixelDifference(AlignedTemplate).Length = 0;
 end;
 
 procedure TRSItemImages.Setup(ZipFile, NamesFile: String);

@@ -180,13 +180,12 @@ end;
 
 procedure TRSInterfaceElement.Click(Button: EMouseButton = EMouseButton.LEFT);
 begin
-  Target.MouseMove(Self.Bounds);
-  Target.MouseClick(Button);
+  RSMouse.Click(Self.Bounds, Button);
 end;
 
 procedure TRSInterfaceElement.Hover;
 begin
-  Target.MouseMove(Self.Bounds);
+  RSMouse.Move(Self.Bounds);
 end;
 
 function TRSInterfaceElement.ButtonEnabled: Boolean;

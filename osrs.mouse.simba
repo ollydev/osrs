@@ -43,5 +43,11 @@ begin
   Target.MouseClick(Button);
 end;
 
+procedure TRSMouse.Click(Circle: TCircle; Button: EMouseButton); overload;
+begin
+  Target.MouseMove(Circle.RandomPointCenter());
+  Target.MouseClick(Button);
+end;
+
 var
   RSMouse: TRSMouse;

@@ -19,7 +19,7 @@ begin
   RSChat.Setup();
 end;
 
-procedure SetupInterfaces_TargetResized(var Target: TTarget; Data: TTargetEventData);
+procedure SetupInterfaces_TargetResized(Target: TTarget; Data: TTargetEventData);
 begin
   SetupInterfaces();
 end;

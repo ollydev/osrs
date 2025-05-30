@@ -29,7 +29,7 @@ type
 
 function TRSMinimap.GetImage: TImage;
 begin
-  Result := TImage.CreateFromTarget(Self.Bounds);
+  Result := Target.GeTImage(Self.Bounds);
   //Result.DrawAlpha := 175;
   Result.DrawImage(Self.GetMask(), [0, 0]);
 end;
@@ -53,8 +53,7 @@ end;
 
 procedure TRSMinimap.ClickOrb(Orb: EMinimapOrb);
 begin
-  Target.MouseMove(Self.GetOrbCircle(Orb).RandomPointCenter());
-  Target.MouseClick(EMouseButton.Left);
+  RSMouse.Click(Self.GetOrbCircle(Orb), EMouseButton.LEFT);
 end;
 
 function TRSMinimap.GetSpecialAttack: Integer;

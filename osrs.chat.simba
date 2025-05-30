@@ -43,7 +43,7 @@ const
     Image: TImage;
     TPA: TPointArray;
   begin
-    Image := TImage.CreateFromTarget(b);
+    Image := Target.GetImage(b);
 
     // First shadow from above line draws over our line.
     // Mark the shadow as a match since OCR requires 100% character match.
@@ -57,8 +57,6 @@ const
     Image.ReplaceColorBinary(False, Image.GetColors(TPA).Unique, 0);
 
     Result := RSOCR.Engine.Recognize(Image, FONT_PLAIN_12, [0,0]);
-
-    Image.Free();
   end;
 
   function Recognize(b: TBox): String;
@@ -102,6 +100,35 @@ begin
   Self.GetDisplayNameBox(Color);
 
   Result := Color = (Colors.WHITE);
+end;
+
+function TRSChat.GetDialog: String;
+begin
+  Result := RSOCR.RecognizeLines(Self.Bounds, FONT_QUILL_8, [$FFFFFF,$800000,$000000,$FF0000,$000080], 1).Join(' ');
+end;
+
+function TRSChat.ClickDialog(Text: String): Boolean;
+var
+  Match: TPixelOCRMatch;
+begin
+  RSOCR.RecognizeLines(Self.Bounds, FONT_QUILL_8, [$FFFFFF,$800000,$000000,$FF0000,$000080], 1);
+
+  for Match in RSOCR.Matches(Self.Bounds) do
+    if (Text in Match.Text) then
+    begin
+      RSMouse.Click(Match.Bounds, EMouseButton.LEFT);
+      Exit(True);
+    end;
+end;
+
+function TRSChat.HasDialog(Text: String): Boolean;
+begin
+  Result := Text in Self.GetDialog();
+end;
+
+function TRSChat.HasLevelUp: Boolean;
+begin
+  Result := Self.HasDialog('Congratulations, you just advanced a ');
 end;
 
 function TRSChat.GetQuery: String;

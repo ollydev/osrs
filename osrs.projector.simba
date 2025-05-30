@@ -104,11 +104,10 @@ begin
   for I := 0 to High(TPA) with 4 do
     Tiles += [TPA[I], TPA[I+1], TPA[I+2], TPA[I+3]];
 
-  Image := TImage.CreateFromTarget();
+  Image := Target.GetImage();
   Image.DrawColor := Colors.RED;
   Image.DrawQuadArray(Tiles, False);
   Image.Show();
-  Image.Free();
 end;
 
 var

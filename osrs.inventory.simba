@@ -19,7 +19,7 @@ end;
 
 function TRSInventory.MouseSlot(Index: Integer): Boolean;
 begin
-  Target.MouseMove(Self.Slots[Index]);
+  RSMouse.Move(Self.Slots[Index]);
 end;
 
 function TRSInventory.IsSlotSelected(Index: Integer): Boolean;

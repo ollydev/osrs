@@ -43,7 +43,7 @@ function TRSSkillsTab.MouseOver(Skill: ERSSkill): Boolean;
 begin
   Result := Self.Open();
   if Result then
-    Target.MouseMove(Self.Slots[Skill]);
+    RSMouse.Move(Self.Slots[Skill]);
 end;
 
 function TRSSkillsTab.GetSkillInfo(Skill: ERSSkill): TRSSkillInfo;
